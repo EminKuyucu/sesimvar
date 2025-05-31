@@ -8,8 +8,11 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../theme/Colors';
 
 export default function LoginScreen() {
@@ -45,49 +48,54 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Hoş Geldin</Text>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={styles.container}
+    >
+      <View style={styles.innerContainer}>
+        <Text style={styles.title}>Hoş Geldin 👋</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="E-posta"
-        placeholderTextColor="#888"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-
-      <View style={styles.passwordContainer}>
         <TextInput
-          style={styles.passwordInput}
-          placeholder="Şifre"
-          placeholderTextColor="#888"
-          secureTextEntry={!passwordVisible}
-          value={password}
-          onChangeText={setPassword}
+          style={styles.input}
+          placeholder="E-posta adresi"
+          placeholderTextColor={Colors.gray}
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
         />
-        <TouchableOpacity onPress={() => setPasswordVisible(!passwordVisible)}>
-          <Ionicons
-            name={passwordVisible ? 'eye-off' : 'eye'}
-            size={24}
-            color="#888"
+
+        <View style={styles.passwordContainer}>
+          <TextInput
+            style={styles.passwordInput}
+            placeholder="Şifre"
+            placeholderTextColor={Colors.gray}
+            secureTextEntry={!passwordVisible}
+            value={password}
+            onChangeText={setPassword}
           />
+          <TouchableOpacity onPress={() => setPasswordVisible(!passwordVisible)}>
+            <Ionicons
+              name={passwordVisible ? 'eye-off' : 'eye'}
+              size={24}
+              color={Colors.gray}
+            />
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Giriş Yap</Text>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => router.push('/register')}>
+          <Text style={styles.linkText}>Hesabın yok mu? Kayıt ol</Text>
         </TouchableOpacity>
       </View>
-
-      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>Giriş Yap</Text>
-        )}
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => router.push('/register')}>
-        <Text style={styles.linkText}>Hesabın yok mu? Kayıt ol</Text>
-      </TouchableOpacity>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -95,54 +103,74 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  innerContainer: {
+    flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '700',
     color: Colors.text,
-    marginBottom: 30,
+    marginBottom: 40,
     textAlign: 'center',
   },
   input: {
     backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#ddd',
+    fontSize: 16,
+    marginBottom: 18,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
   },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#ddd',
     paddingHorizontal: 10,
-    marginBottom: 15,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
   },
   passwordInput: {
     flex: 1,
-    padding: 15,
+    paddingVertical: 14,
+    paddingHorizontal: 6,
+    fontSize: 16,
   },
   button: {
-    backgroundColor: Colors.info, // 🔵 MAVİ RENK BURADA
-    padding: 15,
-    borderRadius: 10,
+    backgroundColor: Colors.info,
+    paddingVertical: 15,
+    borderRadius: 12,
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
+    shadowColor: Colors.info,
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
   },
   buttonText: {
     color: '#fff',
-    fontWeight: 'bold',
+    fontWeight: '600',
     fontSize: 16,
+    letterSpacing: 0.5,
   },
   linkText: {
     textAlign: 'center',
     color: Colors.info,
-    textDecorationLine: 'underline',
     fontSize: 14,
+    textDecorationLine: 'underline',
   },
 });
