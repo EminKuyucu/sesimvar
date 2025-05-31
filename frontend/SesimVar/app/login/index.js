@@ -1,176 +1,86 @@
-import axios from 'axios';
-import { useRouter } from 'expo-router';
 import { useState } from 'react';
+import { useRouter } from 'expo-router';
 import {
-  ActivityIndicator,
-  Alert,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-  KeyboardAvoidingView,
-  Platform
+  View, Text, TextInput, TouchableOpacity,
+  StyleSheet, Alert, ActivityIndicator
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../theme/Colors';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Colors } from '../theme/Colors';
 
 export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [passwordVisible, setPasswordVisible] = useState(false);
 
   const handleLogin = async () => {
-    if (!email.includes('@')) {
-      return Alert.alert('Hatalı E-posta', 'Lütfen geçerli bir e-posta girin.');
-    }
-
-    if (!password.trim()) {
-      return Alert.alert('Eksik Bilgi', 'Lütfen şifrenizi girin.');
+    if (!email.includes('@') || !password) {
+      return Alert.alert('Hata', 'Geçerli bilgiler giriniz.');
     }
 
     try {
       setLoading(true);
-      const response = await axios.post('http://10.196.225.132/user/login', {
+      const res = await axios.post('http://<ip>:5000/user/login', {
         email,
-        password,
+        password
       });
 
-      Alert.alert('Başarılı', 'Giriş yapıldı!');
-      router.replace('/home');
-    } catch (error) {
-      Alert.alert('Hata', 'Giriş yapılamadı. Lütfen bilgilerinizi kontrol edin.');
+      // ✅ Token’ı kaydet
+      await AsyncStorage.setItem('token', res.data.token);
+
+      Alert.alert('Başarılı', 'Giriş başarılı!');
+      router.replace('/'); // Anasayfaya yönlendirme
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Hata', 'Giriş yapılamadı.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.container}
-    >
-      <View style={styles.innerContainer}>
-        <Text style={styles.title}>Hoş Geldin 👋</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Giriş Yap</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="E-posta adresi"
-          placeholderTextColor={Colors.gray}
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
+      <TextInput
+        placeholder="E-posta"
+        value={email}
+        onChangeText={setEmail}
+        style={styles.input}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        placeholderTextColor={Colors.gray}
+      />
+      <TextInput
+        placeholder="Şifre"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+        style={styles.input}
+        placeholderTextColor={Colors.gray}
+      />
 
-        <View style={styles.passwordContainer}>
-          <TextInput
-            style={styles.passwordInput}
-            placeholder="Şifre"
-            placeholderTextColor={Colors.gray}
-            secureTextEntry={!passwordVisible}
-            value={password}
-            onChangeText={setPassword}
-          />
-          <TouchableOpacity onPress={() => setPasswordVisible(!passwordVisible)}>
-            <Ionicons
-              name={passwordVisible ? 'eye-off' : 'eye'}
-              size={24}
-              color={Colors.gray}
-            />
-          </TouchableOpacity>
-        </View>
+      <TouchableOpacity style={styles.button} onPress={handleLogin}>
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Giriş Yap</Text>
+        )}
+      </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Giriş Yap</Text>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => router.push('/register')}>
-          <Text style={styles.linkText}>Hesabın yok mu? Kayıt ol</Text>
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+      <TouchableOpacity onPress={() => router.push('/register')}>
+        <Text style={styles.link}>Hesabın yok mu? Kayıt ol</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  innerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: Colors.text,
-    marginBottom: 40,
-    textAlign: 'center',
-  },
-  input: {
-    backgroundColor: '#fff',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    fontSize: 16,
-    marginBottom: 18,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-  },
-  passwordContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    paddingHorizontal: 10,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-  },
-  passwordInput: {
-    flex: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 6,
-    fontSize: 16,
-  },
-  button: {
-    backgroundColor: Colors.info,
-    paddingVertical: 15,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 16,
-    shadowColor: Colors.info,
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 6,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
-    letterSpacing: 0.5,
-  },
-  linkText: {
-    textAlign: 'center',
-    color: Colors.info,
-    fontSize: 14,
-    textDecorationLine: 'underline',
-  },
+  container: { flex: 1, padding: 24, justifyContent: 'center', backgroundColor: Colors.background },
+  title: { fontSize: 28, fontWeight: 'bold', color: Colors.text, marginBottom: 20, textAlign: 'center' },
+  input: { backgroundColor: '#fff', padding: 12, marginBottom: 16, borderRadius: 10, borderWidth: 1, borderColor: '#ccc' },
+  button: { backgroundColor: Colors.primary, padding: 15, borderRadius: 10, alignItems: 'center' },
+  buttonText: { color: '#fff', fontWeight: '600' },
+  link: { color: Colors.info, marginTop: 16, textAlign: 'center', textDecorationLine: 'underline' }
 });
