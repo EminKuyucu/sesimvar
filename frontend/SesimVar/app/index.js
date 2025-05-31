@@ -1,14 +1,13 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Alert
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors } from '../theme/Colors';
+import {
+  Alert,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { Colors } from './theme/Colors';
 
 export default function HomeScreen() {
   const router = useRouter();
