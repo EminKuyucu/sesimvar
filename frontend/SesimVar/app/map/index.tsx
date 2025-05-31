@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Dimensions, StyleSheet, Text, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 
-import { Colors } from '../theme/Colors';
+import { Colors } from '../../theme/Colors';
 
 // 🧩 Marker tipi tanımı
 type MarkerItem = {

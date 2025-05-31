@@ -13,7 +13,7 @@ import {
   Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../theme/Colors';
+import { Colors } from '../../theme/Colors';
 
 export default function LoginScreen() {
   const router = useRouter();

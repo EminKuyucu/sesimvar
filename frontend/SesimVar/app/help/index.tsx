@@ -6,7 +6,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import AlertModal from '../../components/AlertModal';
 import PrimaryButton from '../../components/PrimaryButton';
-import { Colors } from '../theme/Colors';
+import { Colors } from '../../theme/Colors'; // ✅ Büyük C harfine dikkat
 
 export default function HelpScreen() {
   const [location, setLocation] = useState<Location.LocationObjectCoords | null>(null);

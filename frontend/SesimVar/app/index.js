@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors } from '../theme/Colors';
+import { Colors } from './theme/Colors';
 
 export default function HomeScreen() {
   const router = useRouter();
