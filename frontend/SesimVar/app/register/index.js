@@ -1,15 +1,19 @@
-import { Ionicons } from '@expo/vector-icons'; // 👈 ikonlar için
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
-  Alert,
-  Button,
-  StyleSheet,
+  View,
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import axios from 'axios';
+import { Colors } from '../theme/Colors';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -17,117 +21,172 @@ export default function RegisterScreen() {
   const [tcNo, setTcNo] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // 👁️ kontrol
+  const [loading, setLoading] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
-  const isPasswordValid = (pw) => {
-    return (
-      pw.length >= 8 &&
-      /[A-Z]/.test(pw) &&
-      /[0-9]/.test(pw)
-    );
-  };
-
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!fullName || !tcNo || !phone || !password) {
-      Alert.alert('Lütfen tüm alanları doldurun!');
-      return;
+      return Alert.alert('Eksik Bilgi', 'Lütfen tüm alanları doldurun.');
     }
 
-    if (tcNo.length !== 11 || isNaN(tcNo)) {
-      Alert.alert('TC Kimlik numarası 11 haneli olmalıdır!');
-      return;
-    }
+    try {
+      setLoading(true);
+      const response = await axios.post('http://10.196.225.132/user/register', {
+        tc_no: tcNo,
+        full_name: fullName,
+        phone_number: phone,
+        password,
+      });
 
-    if (phone.length < 10) {
-      Alert.alert('Telefon numarası eksik görünüyor!');
-      return;
+      Alert.alert('Kayıt Başarılı', 'Şimdi giriş yapabilirsiniz.');
+      router.replace('/login');
+    } catch (error) {
+      Alert.alert('Hata', 'Kayıt yapılamadı. Bilgileri kontrol edin.');
+    } finally {
+      setLoading(false);
     }
-
-    if (!isPasswordValid(password)) {
-      Alert.alert('Şifre en az 8 karakter, 1 büyük harf ve 1 sayı içermelidir!');
-      return;
-    }
-
-    Alert.alert('Kayıt başarılı!');
-    router.push('/login');
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Kayıt Ol</Text>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={styles.container}
+    >
+      <View style={styles.innerContainer}>
+        <Text style={styles.title}>Kayıt Ol 📝</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Ad Soyad"
-        value={fullName}
-        onChangeText={setFullName}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="TC Kimlik No"
-        value={tcNo}
-        onChangeText={setTcNo}
-        keyboardType="numeric"
-        maxLength={11}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Telefon Numarası"
-        value={phone}
-        onChangeText={setPhone}
-        keyboardType="phone-pad"
-      />
-
-      {/* Şifre + göz simgesi */}
-      <View style={styles.passwordContainer}>
         <TextInput
-          style={styles.passwordInput}
-          placeholder="Şifre"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={!showPassword}
+          style={styles.input}
+          placeholder="Ad Soyad"
+          placeholderTextColor={Colors.gray}
+          value={fullName}
+          onChangeText={setFullName}
         />
-        <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-          <Ionicons
-            name={showPassword ? 'eye' : 'eye-off'}
-            size={24}
-            color="gray"
+
+        <TextInput
+          style={styles.input}
+          placeholder="T.C. Kimlik No"
+          placeholderTextColor={Colors.gray}
+          value={tcNo}
+          onChangeText={setTcNo}
+          keyboardType="numeric"
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Telefon Numarası"
+          placeholderTextColor={Colors.gray}
+          value={phone}
+          onChangeText={setPhone}
+          keyboardType="phone-pad"
+        />
+
+        <View style={styles.passwordContainer}>
+          <TextInput
+            style={styles.passwordInput}
+            placeholder="Şifre"
+            placeholderTextColor={Colors.gray}
+            secureTextEntry={!passwordVisible}
+            value={password}
+            onChangeText={setPassword}
           />
+          <TouchableOpacity onPress={() => setPasswordVisible(!passwordVisible)}>
+            <Ionicons
+              name={passwordVisible ? 'eye-off' : 'eye'}
+              size={24}
+              color={Colors.gray}
+            />
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Kayıt Ol</Text>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => router.replace('/login')}>
+          <Text style={styles.linkText}>Zaten hesabın var mı? Giriş yap</Text>
         </TouchableOpacity>
       </View>
-
-      <Text style={styles.passwordNote}>
-        Şifre en az 8 karakter, 1 büyük harf ve 1 sayı içermelidir.
-      </Text>
-
-      <Button title="Kayıt Ol" onPress={handleRegister} />
-
-      <Text style={styles.link} onPress={() => router.push('/login')}>
-        Zaten hesabın var mı? Giriş yap
-      </Text>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#fff' },
-  title: { fontSize: 24, marginBottom: 20, textAlign: 'center', fontWeight: 'bold' },
-  input: { borderWidth: 1, borderColor: '#ccc', padding: 10, borderRadius: 5, marginBottom: 10 },
-  passwordNote: { fontSize: 12, color: '#666', marginBottom: 15 },
-  link: { marginTop: 15, color: 'blue', textAlign: 'center' },
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  innerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: Colors.text,
+    marginBottom: 40,
+    textAlign: 'center',
+  },
+  input: {
+    backgroundColor: '#fff',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    fontSize: 16,
+    marginBottom: 18,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+  },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#ddd',
     paddingHorizontal: 10,
-    borderRadius: 5,
-    marginBottom: 10,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
   },
   passwordInput: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 6,
+    fontSize: 16,
+  },
+  button: {
+    backgroundColor: Colors.primary, // 🔴 Acil ama dikkat çeken buton
+    paddingVertical: 15,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 16,
+    shadowColor: Colors.primary,
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 16,
+    letterSpacing: 0.5,
+  },
+  linkText: {
+    textAlign: 'center',
+    color: Colors.primary,
+    fontSize: 14,
+    textDecorationLine: 'underline',
   },
 });
