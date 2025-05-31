@@ -8,7 +8,7 @@ import AlertModal from '../../components/AlertModal';
 import PrimaryButton from '../../components/PrimaryButton';
 import { Colors } from '../theme/Colors';
 
-export default function HelpScreen() {
+export default function SafeScreen() {
   const [location, setLocation] = useState<Location.LocationObjectCoords | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -26,7 +26,7 @@ export default function HelpScreen() {
     })();
   }, []);
 
-  const handleHelpPress = async () => {
+  const handleSafePress = async () => {
     if (!location) {
       alert('Konum alınamadı');
       return;
@@ -35,16 +35,15 @@ export default function HelpScreen() {
     setLoading(true);
 
     try {
-      await axios.post('http://10.196.225.132/help', {
-        user_id: 5,
+      await axios.post('http://10.196.225.132:5000/safe-status', {
+        user_id: 5, // Gerçek kullanıcı ID girilmeli
         latitude: location.latitude,
-        longitude: location.longitude,
-        message: "Yardım istiyorum!"
+        longitude: location.longitude
       });
 
       setModalVisible(true);
     } catch (error) {
-      alert("Yardım gönderilemedi.");
+      alert("Güvendeyim bildirimi gönderilemedi.");
       console.error(error);
     } finally {
       setLoading(false);
@@ -59,22 +58,22 @@ export default function HelpScreen() {
           <Text style={styles.location}>
             {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
           </Text>
-          <Ionicons name="location-sharp" size={80} color="blue" style={{ marginVertical: 25 }} />
+          <Ionicons name="checkmark-circle" size={80} color={Colors.safe} style={{ marginVertical: 25 }} />
         </>
       ) : (
         <ActivityIndicator size="large" color={Colors.info} />
       )}
 
       <PrimaryButton
-        title="Yardım Çağır"
-        onPress={handleHelpPress}
-        color="red"
-        style={{ paddingVertical: 16, paddingHorizontal: 40, borderRadius: 10 }}
+        title="Güvendeyim"
+        onPress={handleSafePress}
+        color={Colors.safe}
+        style={{ paddingVertical: 16, paddingHorizontal: 40, borderRadius: 12 }}
       />
 
       <AlertModal
         visible={modalVisible}
-        message="Yardım çağrınız başarıyla gönderildi!"
+        message="Güvendeyim bildiriminiz başarıyla gönderildi!"
         onClose={() => setModalVisible(false)}
       />
     </View>

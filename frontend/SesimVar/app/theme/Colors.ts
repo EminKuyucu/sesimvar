@@ -4,5 +4,6 @@ export const Colors = {
   info: '#1976D2',          // Bilgi, buton vurguları
   background: '#F5F5F5',    // Genel arka plan
   text: '#333333',          // Ana metin rengi
-  gray: '#9E9E9E',          // Açıklama metinleri vs.
+  gray: '#9E9E9E',          // Açıklama metinleri vs
+ icon: '#0a0a0a',
 };

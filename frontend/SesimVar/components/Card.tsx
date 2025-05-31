@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, TouchableOpacity } from 'react-native';
-import { Colors } from '../constants/Colors';
+import { Colors } from '../app/theme/Colors';
+
 
 export default function Card({ icon, text, color, onPress }) {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
-      <Ionicons name={icon} size={36} color={color} />
+      <Ionicons name={icon} size={36} color={color ?? Colors.primary} />
       <Text style={styles.cardText}>{text}</Text>
     </TouchableOpacity>
   );
