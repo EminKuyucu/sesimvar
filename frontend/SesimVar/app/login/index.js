@@ -1,25 +1,45 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import axios from 'axios';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
 import { Colors } from '../theme/Colors';
 
 export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
+    if (!email.includes('@')) {
+      return Alert.alert('Hatalı E-posta', 'Lütfen geçerli bir e-posta girin.');
+    }
+
+    if (!password.trim()) {
+      return Alert.alert('Eksik Bilgi', 'Lütfen şifrenizi girin.');
+    }
+
     try {
-      const response = await axios.post('http://IP_ADRESIN/user/login', {
+      setLoading(true);
+      const response = await axios.post('http://10.196.225.132/user/login', {
         email,
         password,
       });
+
       Alert.alert('Başarılı', 'Giriş yapıldı!');
       router.replace('/home');
     } catch (error) {
-      Alert.alert('Hata', 'Giriş yapılamadı.');
+      Alert.alert('Hata', 'Giriş yapılamadı. Lütfen bilgilerinizi kontrol edin.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -33,6 +53,8 @@ export default function LoginScreen() {
         placeholderTextColor="#888"
         value={email}
         onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
       />
 
       <TextInput
@@ -44,8 +66,12 @@ export default function LoginScreen() {
         onChangeText={setPassword}
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Giriş Yap</Text>
+      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Giriş Yap</Text>
+        )}
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => router.push('/register')}>
