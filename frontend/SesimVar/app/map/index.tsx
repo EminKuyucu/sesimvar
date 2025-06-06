@@ -1,66 +1,99 @@
 import axios from 'axios';
+import * as Location from 'expo-location';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Dimensions, StyleSheet, Text, View } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import MapView, { Callout, Marker } from 'react-native-maps';
+import { Colors } from '../theme/Colors';
 
-import { Colors } from '../../theme/Colors';
-
-// 🧩 Marker tipi tanımı
+// 🧩 Marker tipi
 type MarkerItem = {
   id: number | string;
   latitude: number;
   longitude: number;
+  type?: 'help' | 'safe' | 'area';
+  created_at?: string;
+  user?: {
+    name: string;
+    health_condition: string;
+  };
 };
 
 export default function MapScreen() {
   const [helpCalls, setHelpCalls] = useState<MarkerItem[]>([]);
   const [safeStatus, setSafeStatus] = useState<MarkerItem[]>([]);
+  const [userLocation, setUserLocation] = useState({ latitude: 37.0, longitude: 35.3 });
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'help' | 'safe' | 'area'>('all');
   const [loading, setLoading] = useState(true);
 
-  // 🟦 Toplanma alanları (şimdilik sabit veri)
+  const token = 'JWT_TOKEN_STRING'; // 🔐 Buraya gerçek token
+
+  // 🟦 Toplanma alanları
   const assemblyAreas: MarkerItem[] = [
-    { id: 'A1', latitude: 37.002, longitude: 35.322 },
-    { id: 'A2', latitude: 37.005, longitude: 35.325 }
+    { id: 'A1', latitude: 37.002, longitude: 35.322, type: 'area' },
+    { id: 'A2', latitude: 37.005, longitude: 35.325, type: 'area' },
   ];
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchAll = async () => {
       try {
-        const helpRes = await axios.get('http://192.168.1.10:5000/help');
-        const safeRes = await axios.get('http://192.168.1.10:5000/safe-status');
+        // 📍 Konum izni al
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          alert('Konum izni reddedildi');
+          return;
+        }
 
-        setHelpCalls(helpRes.data);
-        setSafeStatus(safeRes.data);
+        const loc = await Location.getCurrentPositionAsync({});
+        setUserLocation({
+          latitude: loc.coords.latitude,
+          longitude: loc.coords.longitude,
+        });
+
+        // 🆘 Yardım çağrıları
+        const helpRes = await axios.get('http://192.168.1.10:5000/help', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        // ✅ Güvendeyim verileri
+        const safeRes = await axios.get('http://192.168.1.10:5000/safe-status', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        // 🔴 tip ekle
+        const helpData = helpRes.data.map((item: any) => ({
+          ...item,
+          type: 'help' as const,
+        }));
+
+        const safeData = safeRes.data.map((item: any) => ({
+          ...item,
+          type: 'safe' as const,
+        }));
+
+        setHelpCalls(helpData);
+        setSafeStatus(safeData);
       } catch (err) {
         console.error('Veri çekme hatası:', err);
+        alert('Veri çekilemedi.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    fetchAll();
   }, []);
 
+  const calculateMinutesAgo = (timestamp: string) => {
+    const now = new Date();
+    const created = new Date(timestamp);
+    const diffMs = now.getTime() - created.getTime();
+    return Math.floor(diffMs / 60000); // dakika
+  };
+
   const allMarkers = [
-    ...helpCalls.map((item) => ({
-      id: item.id,
-      latitude: item.latitude,
-      longitude: item.longitude,
-      type: 'help',
-    })),
-    ...safeStatus.map((item) => ({
-      id: item.id,
-      latitude: item.latitude,
-      longitude: item.longitude,
-      type: 'safe',
-    })),
-    ...assemblyAreas.map((item) => ({
-      id: item.id,
-      latitude: item.latitude,
-      longitude: item.longitude,
-      type: 'area',
-    })),
+    ...helpCalls,
+    ...safeStatus,
+    ...assemblyAreas,
   ];
 
   const filteredMarkers = allMarkers.filter((m) =>
@@ -76,8 +109,8 @@ export default function MapScreen() {
           <MapView
             style={styles.map}
             initialRegion={{
-              latitude: 37.002,
-              longitude: 35.322,
+              latitude: userLocation.latitude,
+              longitude: userLocation.longitude,
               latitudeDelta: 0.05,
               longitudeDelta: 0.05,
             }}
@@ -94,9 +127,19 @@ export default function MapScreen() {
                     ? Colors.primary
                     : marker.type === 'safe'
                     ? Colors.safe
-                    : Colors.info // 🟦 Toplanma alanı
+                    : Colors.info
                 }
-              />
+              >
+                {marker.type === 'help' && marker.user && (
+                  <Callout>
+                    <View style={{ maxWidth: 200 }}>
+                      <Text style={{ fontWeight: 'bold' }}>👤 {marker.user.name}</Text>
+                      <Text>❤️ {marker.user.health_condition}</Text>
+                      <Text>⏱️ {calculateMinutesAgo(marker.created_at!)} dk önce</Text>
+                    </View>
+                  </Callout>
+                )}
+              </Marker>
             ))}
           </MapView>
 

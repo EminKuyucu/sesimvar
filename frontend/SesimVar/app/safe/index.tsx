@@ -4,13 +4,13 @@ import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../theme/Colors';
 
-export default function HelpScreen() {
+export default function SafeScreen() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
   const token = 'JWT_TOKEN_STRING'; // 🔐 Buraya gerçek token
 
-  const handleSendHelp = async () => {
+  const handleSendSafe = async () => {
     setLoading(true);
     setSuccess(false);
 
@@ -25,7 +25,7 @@ export default function HelpScreen() {
       const { latitude, longitude } = location.coords;
 
       const res = await axios.post(
-        'http://192.168.1.10:5000/help',
+        'http://192.168.1.10:5000/safe-status',
         { latitude, longitude },
         {
           headers: {
@@ -38,8 +38,8 @@ export default function HelpScreen() {
         setSuccess(true);
       }
     } catch (err) {
-      console.error('Yardım gönderme hatası:', err);
-      alert('Yardım gönderilemedi.');
+      console.error('Güvende bildirimi hatası:', err);
+      alert('Bildirim gönderilemedi.');
     } finally {
       setLoading(false);
     }
@@ -47,18 +47,18 @@ export default function HelpScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Konumunuzu bildirerek yardım çağırabilirsiniz.</Text>
+      <Text style={styles.title}>Konumunuzu bildirerek güvende olduğunuzu belirtebilirsiniz.</Text>
 
       <TouchableOpacity
         style={styles.button}
-        onPress={handleSendHelp}
+        onPress={handleSendSafe}
         disabled={loading}
       >
-        <Text style={styles.buttonText}>🆘 Yardım Çağır</Text>
+        <Text style={styles.buttonText}>✅ Güvendeyim</Text>
       </TouchableOpacity>
 
-      {loading && <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 20 }} />}
-      {success && <Text style={styles.success}>✅ Yardım çağrınız iletildi!</Text>}
+      {loading && <ActivityIndicator size="large" color={Colors.safe} style={{ marginTop: 20 }} />}
+      {success && <Text style={styles.success}>✅ Bildiriminiz başarıyla gönderildi!</Text>}
     </View>
   );
 }
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
   title: { fontSize: 16, marginBottom: 30, textAlign: 'center', color: Colors.text },
   button: {
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.safe,
     paddingVertical: 15,
     paddingHorizontal: 30,
     borderRadius: 10,
