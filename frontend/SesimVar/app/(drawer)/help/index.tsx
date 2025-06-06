@@ -2,7 +2,7 @@ import axios from 'axios';
 import * as Location from 'expo-location';
 import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Colors } from '../theme/Colors';
+import { Colors } from '../../theme/Colors';
 
 export default function HelpScreen() {
   const [loading, setLoading] = useState(false);
@@ -25,7 +25,7 @@ export default function HelpScreen() {
       const { latitude, longitude } = location.coords;
 
       const res = await axios.post(
-        'http://192.168.1.10:5000/help',
+        'http://192.168.1.10:5000/help-calls',
         { latitude, longitude },
         {
           headers: {

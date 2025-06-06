@@ -1,6 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
 import { useRouter } from 'expo-router';
 import {
   Alert,
@@ -9,36 +7,38 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { Colors } from './theme/Colors';
+import { Colors } from '../theme/Colors';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function HomeScreen() {
   const router = useRouter();
 
   const handleHelp = async () => {
-  try {
-    const token = await AsyncStorage.getItem('token');
+    try {
+      const token = await AsyncStorage.getItem('token');
 
-    if (!token) {
-      Alert.alert("Hata", "Token bulunamadı. Lütfen yeniden giriş yap.");
-      return;
-    }
-
-    const response = await axios.post('http://<ip>:5000/user/help-calls', {
-      message: "Yardım edin!",
-      latitude: 36.85,
-      longitude: 30.76,
-    }, {
-      headers: {
-        Authorization: `Bearer ${token}`
+      if (!token) {
+        Alert.alert("Hata", "Token bulunamadı. Lütfen yeniden giriş yap.");
+        return;
       }
-    });
 
-    Alert.alert("Başarılı", "Yardım çağrısı gönderildi!");
-  } catch (error) {
-    console.error(error);
-    Alert.alert("Hata", "Yardım çağrısı gönderilemedi.");
-  }
-};
+      const response = await axios.post('http://192.168.1.5:5000/user/help-calls', {
+        message: "Yardım edin!",
+        latitude: 36.85,   // örnek konum
+        longitude: 30.76   // örnek konum
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      Alert.alert("Başarılı", "Yardım çağrısı gönderildi!");
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Hata", "Yardım çağrısı gönderilemedi.");
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -52,6 +52,10 @@ export default function HomeScreen() {
     </View>
   );
 }
+
+HomeScreen.options = {
+  title: 'Ana Sayfa',
+};
 
 const styles = StyleSheet.create({
   container: {
