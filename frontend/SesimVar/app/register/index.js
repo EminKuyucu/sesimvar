@@ -25,18 +25,22 @@ export default function RegisterScreen() {
 
     try {
       setLoading(true);
-      await axios.post('http://<ip>:5000/user/register', {
+
+      const response = await axios.post('http://10.95.64.36:5000/user/register', {
         full_name: fullName,
         tc_no: tcNo,
         phone_number: phone,
         password
       });
 
-      Alert.alert('Kayıt Başarılı', 'Giriş yapabilirsiniz.');
+      // ✅ API'den gelen mesajı gösteriyoruz
+      const message = response.data?.message || 'Kayıt başarılı!';
+      Alert.alert('Başarılı', message);
       router.replace('/login');
+
     } catch (err) {
-      console.error(err);
-      Alert.alert('Hata', 'Kayıt yapılamadı.');
+      console.error('Kayıt hatası:', err);
+      Alert.alert('Hata', 'Kayıt yapılamadı. Bilgilerinizi kontrol edin.');
     } finally {
       setLoading(false);
     }
@@ -46,12 +50,35 @@ export default function RegisterScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Kayıt Ol</Text>
 
-      <TextInput placeholder="Ad Soyad" value={fullName} onChangeText={setFullName} style={styles.input} />
-      <TextInput placeholder="TC Kimlik No" value={tcNo} onChangeText={setTcNo} style={styles.input} keyboardType="numeric" />
-      <TextInput placeholder="Telefon" value={phone} onChangeText={setPhone} style={styles.input} keyboardType="phone-pad" />
-      <TextInput placeholder="Şifre" value={password} onChangeText={setPassword} secureTextEntry style={styles.input} />
+      <TextInput
+        placeholder="Ad Soyad"
+        value={fullName}
+        onChangeText={setFullName}
+        style={styles.input}
+      />
+      <TextInput
+        placeholder="TC Kimlik No"
+        value={tcNo}
+        onChangeText={setTcNo}
+        style={styles.input}
+        keyboardType="numeric"
+      />
+      <TextInput
+        placeholder="Telefon"
+        value={phone}
+        onChangeText={setPhone}
+        style={styles.input}
+        keyboardType="phone-pad"
+      />
+      <TextInput
+        placeholder="Şifre"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+        style={styles.input}
+      />
 
-      <TouchableOpacity style={styles.button} onPress={handleRegister}>
+      <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
