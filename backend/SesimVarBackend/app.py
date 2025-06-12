@@ -11,8 +11,8 @@ from routes.auth_routes import auth_bp
 from routes.profile_routes import profile_bp
 from routes.safe_routes import safe_bp
 from routes.help_routes import help_bp
-# Diğer blueprint'leri de taşıdıkça buraya eklenecek: profile_bp, help_bp, safe_bp
 
+# Diğer blueprint'leri de taşıdıkça buraya eklenecek: profile_bp, help_bp, safe_bp
 load_dotenv()
 
 app = Flask(__name__)
