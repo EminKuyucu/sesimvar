@@ -1,10 +1,13 @@
+# routes/help_routes.py
+
 from flask import Blueprint, request, jsonify
 from db import get_db_connection
 from auth import token_required
 
 help_bp = Blueprint('help', __name__, url_prefix='/user')
 
-# 🔸 Yeni Yardım Çağrısı
+
+# 🔸 POST - Yardım Çağrısı Oluştur
 @help_bp.route('/help-calls', methods=['POST'])
 @token_required
 def create_help_call():
@@ -41,13 +44,13 @@ def create_help_call():
     """
     try:
         user_id = request.user_id
-        data = request.json
-        message = data.get('message')
-        latitude = data.get('latitude')
-        longitude = data.get('longitude')
+        data = request.get_json()
+        message = data.get("message")
+        latitude = data.get("latitude")
+        longitude = data.get("longitude")
 
         if not all([message, latitude, longitude]):
-            return jsonify({"status": "error", "message": "Tüm alanlar zorunlu."}), 400
+            return jsonify({"status": "error", "message": "Tüm alanlar zorunludur."}), 400
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -61,10 +64,11 @@ def create_help_call():
         return jsonify({"status": "success", "message": "Yardım çağrısı oluşturuldu."}), 201
 
     except Exception as e:
-        print(f"[HELP_CALL ERROR] {str(e)}")
-        return jsonify({"status": "error", "message": "İşlem başarısız."}), 500
+        print(f"[CREATE_HELP_CALL ERROR] {e}")
+        return jsonify({"status": "error", "message": "İşlem başarısız"}), 500
 
-# 🔹 Yardım Çağrılarını Getir
+
+# 🔹 Yardım Çağrılarını Getir (Harita uyumlu)
 @help_bp.route('/help-calls', methods=['GET'])
 @token_required
 def get_help_calls():
@@ -83,17 +87,39 @@ def get_help_calls():
         user_id = request.user_id
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT id, message, latitude, longitude, created_at FROM help_requests WHERE user_id = %s ORDER BY created_at DESC", (user_id,))
-        data = cursor.fetchall()
+        cursor.execute("""
+            SELECT id, user_id, message, latitude, longitude, status, created_at 
+            FROM help_requests 
+            WHERE user_id = %s 
+            ORDER BY created_at DESC
+        """, (user_id,))
+        result = cursor.fetchall()
         conn.close()
 
-        return jsonify({"status": "success", "message": "Veriler getirildi", "data": data}), 200
+        # ✅ Harita uyumlu JSON cevabı
+        formatted = []
+        for row in result:
+            created = row["created_at"]
+            created_str = created.strftime("%Y-%m-%d %H:%M:%S") if created else None
+
+            formatted.append({
+                "id": row["id"],
+                "user_id": row["user_id"],
+                "message": row["message"],
+                "latitude": float(row["latitude"]),
+                "longitude": float(row["longitude"]),
+                "status": row["status"],
+                "created_at": created_str
+            })
+
+        return jsonify({"status": "success", "message": "Veriler getirildi", "data": formatted}), 200
 
     except Exception as e:
         print(f"[GET_HELP_CALLS ERROR] {str(e)}")
         return jsonify({"status": "error", "message": "Veri alınamadı"}), 500
 
-# 🔄 Yardım Çağrısı Güncelle
+
+# 🔄 PUT - Yardım Çağrısı Güncelle
 @help_bp.route('/help-calls/<int:help_id>', methods=['PUT'])
 @token_required
 def update_help_call(help_id):
@@ -135,10 +161,10 @@ def update_help_call(help_id):
     """
     try:
         user_id = request.user_id
-        data = request.json
-        message = data.get('message')
-        latitude = data.get('latitude')
-        longitude = data.get('longitude')
+        data = request.get_json()
+        message = data.get("message")
+        latitude = data.get("latitude")
+        longitude = data.get("longitude")
 
         if not all([message, latitude, longitude]):
             return jsonify({"status": "error", "message": "Lütfen tüm alanları girin."}), 400
@@ -163,10 +189,11 @@ def update_help_call(help_id):
         return jsonify({"status": "success", "message": "Güncellendi."}), 200
 
     except Exception as e:
-        print(f"[UPDATE_HELP_CALL ERROR] {str(e)}")
+        print(f"[UPDATE_HELP_CALL ERROR] {e}")
         return jsonify({"status": "error", "message": "Güncelleme hatası"}), 500
 
-# ❌ Yardım Çağrısı Sil
+
+# ❌ DELETE - Yardım Çağrısı Sil
 @help_bp.route('/help-calls/<int:help_id>', methods=['DELETE'])
 @token_required
 def delete_help_call(help_id):
@@ -207,5 +234,5 @@ def delete_help_call(help_id):
         return jsonify({"status": "success", "message": "Silindi."}), 200
 
     except Exception as e:
-        print(f"[DELETE_HELP_CALL ERROR] {str(e)}")
+        print(f"[DELETE_HELP_CALL ERROR] {e}")
         return jsonify({"status": "error", "message": "Silme sırasında hata"}), 500
