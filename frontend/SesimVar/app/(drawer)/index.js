@@ -1,4 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 import { useRouter } from 'expo-router';
 import {
   Alert,
@@ -8,8 +10,6 @@ import {
   View
 } from 'react-native';
 import { Colors } from '../theme/Colors';
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -23,7 +23,7 @@ export default function HomeScreen() {
         return;
       }
 
-      const response = await axios.post('http://192.168.1.5:5000/user/help-calls', {
+      const response = await axios.post('http://10.192.237.249:5000/user/help-calls', {
         message: "Yardım edin!",
         latitude: 36.85,   // örnek konum
         longitude: 30.76   // örnek konum

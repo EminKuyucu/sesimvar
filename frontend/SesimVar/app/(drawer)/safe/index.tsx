@@ -1,6 +1,6 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import * as Location from 'expo-location';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -41,7 +41,7 @@ export default function SafeScreen() {
       const { latitude, longitude } = location.coords;
 
       const res = await axios.post(
-        'http://192.168.1.10:5000/safe-status',
+        'http://10.192.237.249:5000/safe-status',
         { latitude, longitude },
         {
           headers: {

@@ -1,3 +1,6 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   Alert,
@@ -7,9 +10,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
-import { useRouter } from 'expo-router';
 import { Colors } from '../../theme/Colors';
 
 export default function AccountSettingsScreen() {
@@ -37,7 +37,7 @@ export default function AccountSettingsScreen() {
           onPress: async () => {
             const token = await AsyncStorage.getItem('token');
             try {
-              await axios.delete('http://192.168.1.10:5000/user/delete', {
+              await axios.delete('http://10.192.237.249:5000/user/delete', {
                 headers: { Authorization: `Bearer ${token}` },
               });
               Alert.alert('Hesap silindi');
@@ -57,7 +57,7 @@ export default function AccountSettingsScreen() {
     const token = await AsyncStorage.getItem('token');
     try {
       await axios.put(
-        'http://192.168.1.10:5000/user/password',
+        'http://10.192.237.249:5000/user/password',
         {
           current_password: currentPassword,
           new_password: newPassword,

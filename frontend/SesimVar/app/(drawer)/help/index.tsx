@@ -25,7 +25,7 @@ export default function HelpScreen() {
       const { latitude, longitude } = location.coords;
 
       const res = await axios.post(
-        'http://192.168.1.10:5000/help-calls',
+        'http://10.192.237.249:5000/help-calls',
         { latitude, longitude },
         {
           headers: {

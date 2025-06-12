@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Switch, Alert, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { useEffect, useState } from 'react';
+import { Alert, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../theme/Colors';
 
 export default function NotificationSettingsScreen() {
@@ -18,7 +18,7 @@ export default function NotificationSettingsScreen() {
       setToken(storedToken);
 
       try {
-        const res = await axios.get('http://192.168.1.10:5000/user/notifications', {
+        const res = await axios.get('http://10.192.237.249:5000/user/notifications', {
           headers: { Authorization: `Bearer ${storedToken}` },
         });
 
@@ -42,7 +42,7 @@ export default function NotificationSettingsScreen() {
 
   const handleSave = async () => {
     try {
-      await axios.put('http://192.168.1.10:5000/user/notifications', settings, {
+      await axios.put('http://10.192.237.249:5000/user/notifications', settings, {
         headers: { Authorization: `Bearer ${token}` },
       });
       Alert.alert('Başarılı', 'Bildirim ayarları güncellendi.');

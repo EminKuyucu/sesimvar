@@ -3,7 +3,7 @@ import * as Location from 'expo-location';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Dimensions, StyleSheet, Text, View } from 'react-native';
 import MapView, { Callout, Marker } from 'react-native-maps';
-import { Colors } from '../theme/Colors';
+import { Colors } from '../../theme/Colors';
 
 // 🧩 Marker tipi
 type MarkerItem = {
@@ -50,12 +50,12 @@ export default function MapScreen() {
         });
 
         // 🆘 Yardım çağrıları
-        const helpRes = await axios.get('http://192.168.1.10:5000/help', {
+        const helpRes = await axios.get('http://10.192.237.249:5000/help', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         // ✅ Güvendeyim verileri
-        const safeRes = await axios.get('http://192.168.1.10:5000/safe-status', {
+        const safeRes = await axios.get('http://10.192.237.249:5000/safe-status', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
