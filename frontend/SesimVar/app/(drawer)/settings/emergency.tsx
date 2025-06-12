@@ -1,14 +1,13 @@
-import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 import { useEffect, useState } from 'react';
 import {
   Alert,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
-  ScrollView,
 } from 'react-native';
 import { Colors } from '../../theme/Colors';
 
@@ -27,7 +26,7 @@ export default function EmergencyInfoScreen() {
       setToken(storedToken);
 
       try {
-        const res = await axios.get('http://192.168.1.10:5000/user/emergency', {
+        const res = await axios.get('http://192.168.179.73:5000/user/emergency', {
           headers: { Authorization: `Bearer ${storedToken}` },
         });
 
@@ -51,7 +50,7 @@ export default function EmergencyInfoScreen() {
 
   const handleSave = async () => {
     try {
-      await axios.put('http://192.168.1.10:5000/user/emergency', formData, {
+      await axios.put('http://192.168.179.73:5000/user/emergency', formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
       Alert.alert('Başarılı', 'Afet bilgileri kaydedildi.');

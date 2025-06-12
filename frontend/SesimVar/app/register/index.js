@@ -26,7 +26,7 @@ export default function RegisterScreen() {
     try {
       setLoading(true);
 
-      const response = await axios.post('http://10.95.64.36:5000/user/register', {
+      const response = await axios.post('http://192.168.179.73:5000/user/register', {
         full_name: fullName,
         tc_no: tcNo,
         phone_number: phone,
