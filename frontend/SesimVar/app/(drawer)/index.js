@@ -9,8 +9,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import useAuthRedirect from '../../hooks/useAuthRedirect'; // 🔐
 import { Colors } from '../theme/colors';
-import useAuthRedirect from '../hooks/useAuthRedirect'; // 🔐
 
 export default function HomeScreen() {
   useAuthRedirect(); // 🔐 Token kontrolü
