@@ -9,8 +9,8 @@ export default function HomeScreen() {
       <Text style={styles.title}>Hoş Geldin!</Text>
       <Text style={styles.subtitle}>SesimVar uygulamasına giriş yaptınız.</Text>
 
-      <Button title="Haritayı Aç" onPress={() => router.push('/(tabs)/map')} />
-      <Button title="Ayarlar" onPress={() => router.push('/(tabs)/settings')} />
+      <Button title="Haritayı Aç" onPress={() => router.push('/map')} />
+      <Button title="Ayarlar" onPress={() => router.push('/settings')} />
     </View>
   );
 }

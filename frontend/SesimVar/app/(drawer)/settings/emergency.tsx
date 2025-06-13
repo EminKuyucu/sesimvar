@@ -9,12 +9,15 @@ import {
   TextInput,
   TouchableOpacity,
 } from 'react-native';
-import { Colors } from '../../theme/Colors';
+import { Colors } from '../../theme/colors';
+import useAuthRedirect from '../../../hooks/useAuthRedirect'; // 🔒 Koruma eklendi
 
 export default function EmergencyInfoScreen() {
+  useAuthRedirect(); // 🔒 Giriş kontrolü
+
   const [formData, setFormData] = useState({
-    health: '',
-    blood: '',
+    health_status: '',
+    blood_type: '',
     address: '',
   });
 
@@ -26,13 +29,13 @@ export default function EmergencyInfoScreen() {
       setToken(storedToken);
 
       try {
-        const res = await axios.get('http://192.168.179.73:5000/user/emergency', {
+        const res = await axios.get('http://10.196.232.32:5000/user/profile', {
           headers: { Authorization: `Bearer ${storedToken}` },
         });
 
         setFormData({
-          health: res.data.health || '',
-          blood: res.data.blood || '',
+          health_status: res.data.health_status || '',
+          blood_type: res.data.blood_type || '',
           address: res.data.address || '',
         });
       } catch (err) {
@@ -50,7 +53,7 @@ export default function EmergencyInfoScreen() {
 
   const handleSave = async () => {
     try {
-      await axios.put('http://192.168.179.73:5000/user/emergency', formData, {
+      await axios.put('http://10.196.232.32:5000/user/profile', formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
       Alert.alert('Başarılı', 'Afet bilgileri kaydedildi.');
@@ -67,20 +70,20 @@ export default function EmergencyInfoScreen() {
       <TextInput
         style={styles.input}
         placeholder="Sağlık Problemleri"
-        value={formData.health}
-        onChangeText={(text) => handleChange('health', text)}
+        value={formData.health_status}
+        onChangeText={(text) => handleChange('health_status', text)}
       />
 
       <TextInput
         style={styles.input}
         placeholder="Kan Grubu"
-        value={formData.blood}
-        onChangeText={(text) => handleChange('blood', text)}
+        value={formData.blood_type}
+        onChangeText={(text) => handleChange('blood_type', text)}
       />
 
       <TextInput
         style={styles.input}
-        placeholder="Adres / Konum"
+        placeholder="Adres / Konum (opsiyonel)"
         value={formData.address}
         onChangeText={(text) => handleChange('address', text)}
       />

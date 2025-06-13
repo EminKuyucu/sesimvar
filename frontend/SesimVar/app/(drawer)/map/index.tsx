@@ -1,11 +1,18 @@
 import axios from 'axios';
 import * as Location from 'expo-location';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Dimensions, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Dimensions,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import MapView, { Callout, Marker } from 'react-native-maps';
-import { Colors } from '../../theme/Colors';
+import { Colors } from '../../theme/colors';
+import useAuthRedirect from '../../../hooks/useAuthRedirect'; // 🔐 Token kontrolü
 
-// 🧩 Marker tipi
 type MarkerItem = {
   id: number | string;
   latitude: number;
@@ -19,15 +26,19 @@ type MarkerItem = {
 };
 
 export default function MapScreen() {
+  useAuthRedirect(); // ⛔ Token yoksa login sayfasına yönlendir
+
   const [helpCalls, setHelpCalls] = useState<MarkerItem[]>([]);
   const [safeStatus, setSafeStatus] = useState<MarkerItem[]>([]);
-  const [userLocation, setUserLocation] = useState({ latitude: 37.0, longitude: 35.3 });
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'help' | 'safe' | 'area'>('all');
+  const [userLocation, setUserLocation] = useState({
+    latitude: 37.0,
+    longitude: 35.3,
+  });
+  const [selectedFilter, setSelectedFilter] = useState<
+    'all' | 'help' | 'safe' | 'area'
+  >('all');
   const [loading, setLoading] = useState(true);
 
-  const token = 'JWT_TOKEN_STRING'; // 🔐 Buraya gerçek token
-
-  // 🟦 Toplanma alanları
   const assemblyAreas: MarkerItem[] = [
     { id: 'A1', latitude: 37.002, longitude: 35.322, type: 'area' },
     { id: 'A2', latitude: 37.005, longitude: 35.325, type: 'area' },
@@ -36,7 +47,12 @@ export default function MapScreen() {
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        // 📍 Konum izni al
+        const token = await AsyncStorage.getItem('token');
+        if (!token) {
+          alert('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+          return;
+        }
+
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
           alert('Konum izni reddedildi');
@@ -49,17 +65,14 @@ export default function MapScreen() {
           longitude: loc.coords.longitude,
         });
 
-        // 🆘 Yardım çağrıları
-        const helpRes = await axios.get('http://10.192.237.249:5000/help', {
+        const helpRes = await axios.get('http://10.196.232.32:5000/user/help-calls', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // ✅ Güvendeyim verileri
-        const safeRes = await axios.get('http://10.192.237.249:5000/safe-status', {
+        const safeRes = await axios.get('http://10.196.232.32:5000/user/safe-status', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // 🔴 tip ekle
         const helpData = helpRes.data.map((item: any) => ({
           ...item,
           type: 'help' as const,
@@ -74,7 +87,7 @@ export default function MapScreen() {
         setSafeStatus(safeData);
       } catch (err) {
         console.error('Veri çekme hatası:', err);
-        alert('Veri çekilemedi.');
+        alert('Veriler alınamadı. Lütfen tekrar deneyin.');
       } finally {
         setLoading(false);
       }
@@ -87,14 +100,10 @@ export default function MapScreen() {
     const now = new Date();
     const created = new Date(timestamp);
     const diffMs = now.getTime() - created.getTime();
-    return Math.floor(diffMs / 60000); // dakika
+    return Math.floor(diffMs / 60000);
   };
 
-  const allMarkers = [
-    ...helpCalls,
-    ...safeStatus,
-    ...assemblyAreas,
-  ];
+  const allMarkers = [...helpCalls, ...safeStatus, ...assemblyAreas];
 
   const filteredMarkers = allMarkers.filter((m) =>
     selectedFilter === 'all' ? true : m.type === selectedFilter
@@ -133,9 +142,13 @@ export default function MapScreen() {
                 {marker.type === 'help' && marker.user && (
                   <Callout>
                     <View style={{ maxWidth: 200 }}>
-                      <Text style={{ fontWeight: 'bold' }}>👤 {marker.user.name}</Text>
+                      <Text style={{ fontWeight: 'bold' }}>
+                        👤 {marker.user.name}
+                      </Text>
                       <Text>❤️ {marker.user.health_condition}</Text>
-                      <Text>⏱️ {calculateMinutesAgo(marker.created_at!)} dk önce</Text>
+                      <Text>
+                        ⏱️ {calculateMinutesAgo(marker.created_at!)} dk önce
+                      </Text>
                     </View>
                   </Callout>
                 )}
@@ -144,10 +157,18 @@ export default function MapScreen() {
           </MapView>
 
           <View style={styles.filters}>
-            <Text style={styles.filter} onPress={() => setSelectedFilter('all')}>Tümü</Text>
-            <Text style={styles.filter} onPress={() => setSelectedFilter('help')}>Yardım</Text>
-            <Text style={styles.filter} onPress={() => setSelectedFilter('safe')}>Güvende</Text>
-            <Text style={styles.filter} onPress={() => setSelectedFilter('area')}>Toplanma</Text>
+            <Text style={styles.filter} onPress={() => setSelectedFilter('all')}>
+              Tümü
+            </Text>
+            <Text style={styles.filter} onPress={() => setSelectedFilter('help')}>
+              Yardım
+            </Text>
+            <Text style={styles.filter} onPress={() => setSelectedFilter('safe')}>
+              Güvende
+            </Text>
+            <Text style={styles.filter} onPress={() => setSelectedFilter('area')}>
+              Toplanma
+            </Text>
           </View>
         </>
       )}

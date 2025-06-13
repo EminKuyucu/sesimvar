@@ -9,9 +9,12 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Colors } from '../../theme/Colors';
+import { Colors } from '../../theme/colors';
+import useAuthRedirect from '../../../hooks/useAuthRedirect'; // 🔐 Token kontrolü
 
 export default function SafeScreen() {
+  useAuthRedirect(); // ⛔ Token yoksa login'e yönlendir
+
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [token, setToken] = useState<string | null>(null);
@@ -41,11 +44,12 @@ export default function SafeScreen() {
       const { latitude, longitude } = location.coords;
 
       const res = await axios.post(
-        'http://192.168.179.73:5000/safe-status',
+        'http://10.196.232.32:5000/user/safe-status',
         { latitude, longitude },
         {
           headers: {
             Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
         }
       );
@@ -68,10 +72,7 @@ export default function SafeScreen() {
       </Text>
 
       <TouchableOpacity
-        style={[
-          styles.button,
-          success && styles.buttonSuccess,
-        ]}
+        style={[styles.button, success && styles.buttonSuccess]}
         onPress={handleSendSafe}
         disabled={loading || success}
       >
@@ -94,10 +95,6 @@ export default function SafeScreen() {
     </View>
   );
 }
-
-SafeScreen.options = {
-  title: 'Güvendeyim',
-};
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },

@@ -10,15 +10,18 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { Colors } from '../../theme/colors'; // dosya yoluna göre düzenle
+import { Colors } from '../../theme/colors';
+import useAuthRedirect from '../../../hooks/useAuthRedirect'; // 🔐 Koruma
 
 export default function ProfileScreen() {
+  useAuthRedirect(); // 🔐 Token yoksa login'e yönlendir
+
   const [formData, setFormData] = useState({
-    name: '',
-    tc: '',
-    phone: '',
-    email: '',
-    password: '',
+    full_name: '',
+    tc_no: '',
+    phone_number: '',
+    blood_type: '',
+    health_status: '',
   });
 
   const [token, setToken] = useState<string | null>(null);
@@ -33,13 +36,12 @@ export default function ProfileScreen() {
           headers: { Authorization: `Bearer ${storedToken}` },
         });
 
-        const data = res.data.data;
         setFormData({
-          name: data.full_name || '',
-          tc: data.tc_no || '',
-          phone: data.phone_number || '',
-          email: data.email || '',
-          password: '', // güvenlik için boş bırakılıyor
+          full_name: res.data.full_name || '',
+          tc_no: res.data.tc_no || '',
+          phone_number: res.data.phone_number || '',
+          blood_type: res.data.blood_type || '',
+          health_status: res.data.health_status || '',
         });
       } catch (error) {
         console.error(error);
@@ -54,13 +56,7 @@ export default function ProfileScreen() {
     try {
       await axios.put(
         'http://10.196.232.32:5000/user/profile',
-        {
-          full_name: formData.name,
-          tc_no: formData.tc,
-          phone_number: formData.phone,
-          email: formData.email,
-          password: formData.password,
-        },
+        formData,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -78,41 +74,38 @@ export default function ProfileScreen() {
       <Text style={styles.label}>Ad Soyad</Text>
       <TextInput
         style={styles.input}
-        value={formData.name}
-        onChangeText={(text) => setFormData({ ...formData, name: text })}
+        value={formData.full_name}
+        onChangeText={(text) => setFormData({ ...formData, full_name: text })}
       />
 
       <Text style={styles.label}>T.C. Kimlik No</Text>
       <TextInput
         style={styles.input}
-        value={formData.tc}
-        onChangeText={(text) => setFormData({ ...formData, tc: text })}
+        value={formData.tc_no}
+        onChangeText={(text) => setFormData({ ...formData, tc_no: text })}
         keyboardType="numeric"
       />
 
       <Text style={styles.label}>Telefon</Text>
       <TextInput
         style={styles.input}
-        value={formData.phone}
-        onChangeText={(text) => setFormData({ ...formData, phone: text })}
+        value={formData.phone_number}
+        onChangeText={(text) => setFormData({ ...formData, phone_number: text })}
         keyboardType="phone-pad"
       />
 
-      <Text style={styles.label}>E-Posta</Text>
+      <Text style={styles.label}>Kan Grubu</Text>
       <TextInput
         style={styles.input}
-        value={formData.email}
-        onChangeText={(text) => setFormData({ ...formData, email: text })}
-        keyboardType="email-address"
+        value={formData.blood_type}
+        onChangeText={(text) => setFormData({ ...formData, blood_type: text })}
       />
 
-      <Text style={styles.label}>Yeni Şifre</Text>
+      <Text style={styles.label}>Sağlık Durumu</Text>
       <TextInput
         style={styles.input}
-        value={formData.password}
-        onChangeText={(text) => setFormData({ ...formData, password: text })}
-        secureTextEntry
-        placeholder="Şifreyi güncellemek için doldurun"
+        value={formData.health_status}
+        onChangeText={(text) => setFormData({ ...formData, health_status: text })}
       />
 
       <TouchableOpacity style={styles.button} onPress={handleSave}>

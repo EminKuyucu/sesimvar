@@ -10,11 +10,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Colors } from '../../theme/Colors';
+import { Colors } from '../../theme/colors';
+import useAuthRedirect from '../../../hooks/useAuthRedirect'; // 🔒 Giriş koruması eklendi
 
 export default function AccountSettingsScreen() {
-  const router = useRouter();
+  useAuthRedirect(); // 🔒 Giriş yapılmadıysa login sayfasına yönlendir
 
+  const router = useRouter();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
@@ -37,7 +39,7 @@ export default function AccountSettingsScreen() {
           onPress: async () => {
             const token = await AsyncStorage.getItem('token');
             try {
-              await axios.delete('http://10.192.237.249:5000/user/delete', {
+              await axios.delete('http://10.196.232.32:5000/user/profile', {
                 headers: { Authorization: `Bearer ${token}` },
               });
               Alert.alert('Hesap silindi');
@@ -57,7 +59,7 @@ export default function AccountSettingsScreen() {
     const token = await AsyncStorage.getItem('token');
     try {
       await axios.put(
-        'http://10.192.237.249:5000/user/password',
+        'http://10.196.232.32:5000/user/password', // ⚠️ Bu endpoint backend'de varsa çalışır
         {
           current_password: currentPassword,
           new_password: newPassword,

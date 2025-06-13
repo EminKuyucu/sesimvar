@@ -1,15 +1,19 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   StyleSheet,
-  Text, TextInput, TouchableOpacity,
+  Text,
+  TextInput,
+  TouchableOpacity,
   View
 } from 'react-native';
-import { Colors } from '../theme/Colors';
+import { Colors } from '../theme/colors';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -17,9 +21,20 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // ✅ Oturum zaten açıksa direkt home ekranına yönlendir
+  useEffect(() => {
+    const checkToken = async () => {
+      const token = await AsyncStorage.getItem('token');
+      if (token) {
+        router.replace('/(drawer)/home');
+      }
+    };
+    checkToken();
+  }, []);
+
   const handleLogin = async () => {
-    if (!email.includes('@') || !password) {
-      return Alert.alert('Hata', 'Geçerli bilgiler giriniz.');
+    if (!email.includes('@') || password.length < 4) {
+      return Alert.alert('Hata', 'Geçerli bir e-posta ve şifre giriniz.');
     }
 
     try {
@@ -29,21 +44,24 @@ export default function LoginScreen() {
         password
       });
 
-      // ✅ Token’ı kaydet
       await AsyncStorage.setItem('token', res.data.token);
+      await AsyncStorage.setItem('full_name', res.data.full_name || 'Kullanıcı');
 
       Alert.alert('Başarılı', 'Giriş başarılı!');
-      router.replace('/'); // Anasayfaya yönlendirme
+      router.replace('/(drawer)/home');
     } catch (err) {
       console.error(err);
-      Alert.alert('Hata', 'Giriş yapılamadı.');
+      Alert.alert('Hata', 'E-posta veya şifre yanlış.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <Text style={styles.title}>Giriş Yap</Text>
 
       <TextInput
@@ -55,6 +73,7 @@ export default function LoginScreen() {
         autoCapitalize="none"
         placeholderTextColor={Colors.gray}
       />
+
       <TextInput
         placeholder="Şifre"
         value={password}
@@ -64,7 +83,7 @@ export default function LoginScreen() {
         placeholderTextColor={Colors.gray}
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
+      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
@@ -75,15 +94,32 @@ export default function LoginScreen() {
       <TouchableOpacity onPress={() => router.push('/register')}>
         <Text style={styles.link}>Hesabın yok mu? Kayıt ol</Text>
       </TouchableOpacity>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 24, justifyContent: 'center', backgroundColor: Colors.background },
   title: { fontSize: 28, fontWeight: 'bold', color: Colors.text, marginBottom: 20, textAlign: 'center' },
-  input: { backgroundColor: '#fff', padding: 12, marginBottom: 16, borderRadius: 10, borderWidth: 1, borderColor: '#ccc' },
-  button: { backgroundColor: Colors.primary, padding: 15, borderRadius: 10, alignItems: 'center' },
+  input: {
+    backgroundColor: '#fff',
+    padding: 12,
+    marginBottom: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ccc'
+  },
+  button: {
+    backgroundColor: Colors.primary,
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center'
+  },
   buttonText: { color: '#fff', fontWeight: '600' },
-  link: { color: Colors.info, marginTop: 16, textAlign: 'center', textDecorationLine: 'underline' }
+  link: {
+    color: Colors.info,
+    marginTop: 16,
+    textAlign: 'center',
+    textDecorationLine: 'underline'
+  }
 });

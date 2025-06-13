@@ -1,16 +1,33 @@
 import axios from 'axios';
 import * as Location from 'expo-location';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Colors } from '../../theme/Colors';
+import { Colors } from '../../theme/colors';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import useAuthRedirect from '../../../hooks/useAuthRedirect'; // 🔐 Giriş kontrolü için
 
 export default function HelpScreen() {
+  useAuthRedirect(); // ⛔ Giriş yapılmadıysa login sayfasına yönlendir
+
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const token = 'JWT_TOKEN_STRING'; // 🔐 Buraya gerçek token
+  const [token, setToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadToken = async () => {
+      const storedToken = await AsyncStorage.getItem('token');
+      setToken(storedToken);
+    };
+    loadToken();
+  }, []);
 
   const handleSendHelp = async () => {
+    if (!token) {
+      alert('Giriş yapmadan yardım gönderemezsiniz.');
+      return;
+    }
+
     setLoading(true);
     setSuccess(false);
 
@@ -25,11 +42,16 @@ export default function HelpScreen() {
       const { latitude, longitude } = location.coords;
 
       const res = await axios.post(
-        'http://10.192.237.249:5000/help-calls',
-        { latitude, longitude },
+        'http://10.192.237.249:5000/user/help-calls',
+        {
+          latitude,
+          longitude,
+          message: 'Acil yardım gerekiyor',
+        },
         {
           headers: {
             Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
         }
       );

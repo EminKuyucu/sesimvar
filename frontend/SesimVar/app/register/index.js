@@ -1,14 +1,18 @@
 import axios from 'axios';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   StyleSheet,
-  Text, TextInput, TouchableOpacity,
-  View
+  Text,
+  TextInput,
+  TouchableOpacity
 } from 'react-native';
-import { Colors } from '../theme/Colors';
+import { Colors } from '../theme/colors';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -18,22 +22,44 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // ✅ Token varsa doğrudan ana sayfaya yönlendir
+  useEffect(() => {
+    const checkIfLoggedIn = async () => {
+      const token = await AsyncStorage.getItem('token');
+      if (token) {
+        router.replace('/(drawer)/home');
+      }
+    };
+    checkIfLoggedIn();
+  }, []);
+
   const handleRegister = async () => {
     if (!fullName || !tcNo || !phone || !password) {
       return Alert.alert('Eksik Bilgi', 'Tüm alanları doldurmalısınız.');
     }
 
+    if (tcNo.length !== 11) {
+      return Alert.alert('Hata', 'TC Kimlik No 11 haneli olmalıdır.');
+    }
+
+    if (phone.length < 10) {
+      return Alert.alert('Hata', 'Geçerli bir telefon numarası giriniz.');
+    }
+
+    if (password.length < 4) {
+      return Alert.alert('Hata', 'Şifre en az 4 karakter olmalıdır.');
+    }
+
     try {
       setLoading(true);
 
-      const response = await axios.post('http://192.168.179.73:5000/user/register', {
+      const response = await axios.post('http://10.196.232.32:5000/user/register', {
         full_name: fullName,
         tc_no: tcNo,
         phone_number: phone,
         password
       });
 
-      // ✅ API'den gelen mesajı gösteriyoruz
       const message = response.data?.message || 'Kayıt başarılı!';
       Alert.alert('Başarılı', message);
       router.replace('/login');
@@ -47,7 +73,10 @@ export default function RegisterScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <Text style={styles.title}>Kayıt Ol</Text>
 
       <TextInput
@@ -62,13 +91,15 @@ export default function RegisterScreen() {
         onChangeText={setTcNo}
         style={styles.input}
         keyboardType="numeric"
+        maxLength={11}
       />
       <TextInput
-        placeholder="Telefon"
+        placeholder="Telefon Numarası"
         value={phone}
         onChangeText={setPhone}
         style={styles.input}
         keyboardType="phone-pad"
+        maxLength={15}
       />
       <TextInput
         placeholder="Şifre"
@@ -89,15 +120,46 @@ export default function RegisterScreen() {
       <TouchableOpacity onPress={() => router.push('/login')}>
         <Text style={styles.link}>Zaten hesabın var mı? Giriş yap</Text>
       </TouchableOpacity>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, justifyContent: 'center', backgroundColor: Colors.background },
-  title: { fontSize: 28, fontWeight: 'bold', color: Colors.text, marginBottom: 20, textAlign: 'center' },
-  input: { backgroundColor: '#fff', padding: 12, marginBottom: 16, borderRadius: 10, borderWidth: 1, borderColor: '#ccc' },
-  button: { backgroundColor: Colors.safe, padding: 15, borderRadius: 10, alignItems: 'center' },
-  buttonText: { color: '#fff', fontWeight: '600' },
-  link: { color: Colors.info, marginTop: 16, textAlign: 'center', textDecorationLine: 'underline' }
+  container: {
+    flex: 1,
+    padding: 24,
+    justifyContent: 'center',
+    backgroundColor: Colors.background,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: Colors.text,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  input: {
+    backgroundColor: '#fff',
+    padding: 12,
+    marginBottom: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  button: {
+    backgroundColor: Colors.safe,
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  link: {
+    color: Colors.info,
+    marginTop: 16,
+    textAlign: 'center',
+    textDecorationLine: 'underline',
+  },
 });

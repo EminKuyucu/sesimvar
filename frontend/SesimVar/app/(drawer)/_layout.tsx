@@ -1,21 +1,32 @@
-import { Drawer } from 'expo-router/drawer';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   DrawerContentScrollView,
-  DrawerItemList
+  DrawerItemList,
 } from '@react-navigation/drawer';
-import { View, Text, StyleSheet } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Drawer } from 'expo-router/drawer';
 import { useEffect, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import useAuthRedirect from '../../hooks/useAuthRedirect'; // 🔐
 
 function CustomDrawerContent(props) {
-  const [fullName, setFullName] = useState('Yükleniyor...');
+  const [fullName, setFullName] = useState<string>('Yükleniyor...');
 
   useEffect(() => {
     const loadUser = async () => {
-      const name = await AsyncStorage.getItem('full_name');
-      if (name) setFullName(name);
+      try {
+        const name = await AsyncStorage.getItem('full_name');
+        if (name) {
+          setFullName(name);
+        } else {
+          setFullName('Bilinmeyen Kullanıcı');
+        }
+      } catch (error) {
+        console.error('Kullanıcı adı alınamadı:', error);
+        setFullName('Hata oluştu');
+      }
     };
+
     loadUser();
   }, []);
 
@@ -30,6 +41,8 @@ function CustomDrawerContent(props) {
 }
 
 export default function DrawerLayout() {
+  useAuthRedirect(); // 🔐 token yoksa login'e yönlendir
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Drawer

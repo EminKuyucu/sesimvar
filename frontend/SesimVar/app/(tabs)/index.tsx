@@ -6,8 +6,11 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  Alert,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
 export default function LoginScreen() {
   const [tc, setTc] = useState('');
@@ -16,22 +19,32 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!tc || !password) {
-      alert('Lütfen tüm alanları doldurun.');
+      Alert.alert('Hata', 'Lütfen tüm alanları doldurun.');
       return;
     }
 
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const res = await axios.post('http://10.196.232.32:5000/user/login', {
+        tc_no: tc,
+        password: password,
+      });
+
+      const { token, full_name } = res.data;
+
+      await AsyncStorage.setItem('token', token);
+      await AsyncStorage.setItem('full_name', full_name);
+
+      Alert.alert('Başarılı', 'Giriş yapıldı.');
+      router.replace('/home'); // login sonrası ana sayfaya yönlendirme
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Hata', 'TC veya şifre hatalı.');
+    } finally {
       setLoading(false);
-      if (tc === '12345678901' && password === '1234') {
-        alert('Giriş başarılı!');
-        // router.push('/home'); // örnek geçiş
-      } else {
-        alert('TC veya şifre hatalı.');
-      }
-    }, 1500);
+    }
   };
 
   return (
@@ -62,11 +75,7 @@ export default function LoginScreen() {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handleLogin}
-        disabled={loading}
-      >
+      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (

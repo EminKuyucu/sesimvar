@@ -1,10 +1,20 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
-import { Alert, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
-import { Colors } from '../../theme/Colors';
+import {
+  Alert,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { Colors } from '../../theme/colors';
+import useAuthRedirect from '../../../hooks/useAuthRedirect'; // 🔐 Giriş kontrolü
 
 export default function NotificationSettingsScreen() {
+  useAuthRedirect(); // 🔐 Token yoksa login ekranına yönlendir
+
   const [token, setToken] = useState<string | null>(null);
   const [settings, setSettings] = useState({
     general: false,
@@ -18,14 +28,14 @@ export default function NotificationSettingsScreen() {
       setToken(storedToken);
 
       try {
-        const res = await axios.get('http://10.192.237.249:5000/user/notifications', {
+        const res = await axios.get('http://10.196.232.32:5000/user/notifications', {
           headers: { Authorization: `Bearer ${storedToken}` },
         });
 
         setSettings({
-          general: res.data.general,
-          emergency: res.data.emergency,
-          silentMode: res.data.silentMode,
+          general: res.data.general ?? false,
+          emergency: res.data.emergency ?? true,
+          silentMode: res.data.silentMode ?? false,
         });
       } catch (err) {
         console.error('Bildirim ayarları alınamadı:', err);
@@ -36,13 +46,13 @@ export default function NotificationSettingsScreen() {
     fetchSettings();
   }, []);
 
-  const toggleSwitch = (key: string) => {
+  const toggleSwitch = (key: keyof typeof settings) => {
     setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleSave = async () => {
     try {
-      await axios.put('http://10.192.237.249:5000/user/notifications', settings, {
+      await axios.put('http://10.196.232.32:5000/user/notifications', settings, {
         headers: { Authorization: `Bearer ${token}` },
       });
       Alert.alert('Başarılı', 'Bildirim ayarları güncellendi.');
