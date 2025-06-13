@@ -10,18 +10,17 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
-  View
+  TouchableOpacity
 } from 'react-native';
 import { Colors } from '../theme/colors';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [tcNo, setTcNo] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // ✅ Oturum zaten açıksa direkt home ekranına yönlendir
+  // ✅ Token varsa direkt home'a yönlendir
   useEffect(() => {
     const checkToken = async () => {
       const token = await AsyncStorage.getItem('token');
@@ -33,25 +32,40 @@ export default function LoginScreen() {
   }, []);
 
   const handleLogin = async () => {
-    if (!email.includes('@') || password.length < 4) {
-      return Alert.alert('Hata', 'Geçerli bir e-posta ve şifre giriniz.');
+    if (!tcNo || !password) {
+      return Alert.alert('Hata', 'Tüm alanları doldurun.');
+    }
+
+    if (tcNo.length !== 11 || password.length < 4) {
+      return Alert.alert('Hata', 'Geçerli bir TC kimlik numarası ve şifre giriniz.');
     }
 
     try {
       setLoading(true);
-      const res = await axios.post('http://192.168.179.73:5000/user/login', {
-        email,
+
+      const res = await axios.post('http://10.196.232.32:5000/user/login', {
+        tc_no: tcNo,
         password
       });
 
-      await AsyncStorage.setItem('token', res.data.token);
-      await AsyncStorage.setItem('full_name', res.data.full_name || 'Kullanıcı');
+      console.log("Login yanıtı:", res.data);
+
+      const token = res.data?.data?.token;
+      const fullName = res.data?.data?.full_name || 'Kullanıcı';
+
+      if (!token) {
+        Alert.alert('Hata', 'Sunucudan geçerli bir token alınamadı.');
+        return;
+      }
+
+      await AsyncStorage.setItem('token', token);
+      await AsyncStorage.setItem('full_name', fullName);
 
       Alert.alert('Başarılı', 'Giriş başarılı!');
       router.replace('/(drawer)/home');
     } catch (err) {
-      console.error(err);
-      Alert.alert('Hata', 'E-posta veya şifre yanlış.');
+      console.error('Giriş hatası:', err?.response?.data || err);
+      Alert.alert('Hata', 'TC Kimlik No veya şifre yanlış.');
     } finally {
       setLoading(false);
     }
@@ -65,12 +79,12 @@ export default function LoginScreen() {
       <Text style={styles.title}>Giriş Yap</Text>
 
       <TextInput
-        placeholder="E-posta"
-        value={email}
-        onChangeText={setEmail}
+        placeholder="TC Kimlik No"
+        value={tcNo}
+        onChangeText={setTcNo}
         style={styles.input}
-        keyboardType="email-address"
-        autoCapitalize="none"
+        keyboardType="numeric"
+        maxLength={11}
         placeholderTextColor={Colors.gray}
       />
 
