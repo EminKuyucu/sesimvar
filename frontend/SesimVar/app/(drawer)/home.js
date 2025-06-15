@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import useAuthRedirect from '../../hooks/useAuthRedirect'; // 🔐
-import { Colors } from '../../theme/colors'; // ✅ düzeltildi
+import { Colors } from '../theme/colors'; // ✅ düzeltildi
 
 export default function HomeScreen() {
   useAuthRedirect(); // 🔐 Token kontrolü
