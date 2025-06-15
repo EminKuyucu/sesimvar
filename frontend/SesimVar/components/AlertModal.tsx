@@ -1,5 +1,5 @@
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Colors } from '../app/theme/Colors';
+import { Colors } from '../app/theme/colors';
 
 
 export default function AlertModal({ visible, message, onClose }) {

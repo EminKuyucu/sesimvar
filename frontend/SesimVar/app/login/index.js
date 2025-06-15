@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -22,13 +22,14 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
 
   // ✅ Giriş yapılmışsa direkt ana sayfaya yönlendir
+  const checkToken = useCallback(async () => {
+    const token = await AsyncStorage.getItem('token');
+    if (token) router.replace('/(drawer)/home');
+  }, [router]);
+
   useEffect(() => {
-    const checkToken = async () => {
-      const token = await AsyncStorage.getItem('token');
-      if (token) router.replace('/(drawer)/home');
-    };
     checkToken();
-  }, [router]); // 🔧 Hata düzeltildi: router dependency olarak eklendi
+  }, [checkToken]);
 
   const handleLogin = async () => {
     if (!tcNo || !password) {
