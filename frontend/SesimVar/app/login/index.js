@@ -10,7 +10,8 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { Colors } from '../theme/colors';
 
@@ -20,24 +21,22 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // ✅ Token varsa direkt home'a yönlendir
+  // ✅ Giriş yapılmışsa direkt ana sayfaya yönlendir
   useEffect(() => {
     const checkToken = async () => {
       const token = await AsyncStorage.getItem('token');
-      if (token) {
-        router.replace('/(drawer)/home');
-      }
+      if (token) router.replace('/(drawer)/home');
     };
     checkToken();
-  }, []);
+  }, [router]); // 🔧 Hata düzeltildi: router dependency olarak eklendi
 
   const handleLogin = async () => {
     if (!tcNo || !password) {
-      return Alert.alert('Hata', 'Tüm alanları doldurun.');
+      return Alert.alert('Eksik Bilgi', 'Lütfen tüm alanları doldurun.');
     }
 
     if (tcNo.length !== 11 || password.length < 4) {
-      return Alert.alert('Hata', 'Geçerli bir TC kimlik numarası ve şifre giriniz.');
+      return Alert.alert('Geçersiz Giriş', 'TC Kimlik No 11 haneli olmalı, şifre en az 4 karakter olmalı.');
     }
 
     try {
@@ -45,27 +44,24 @@ export default function LoginScreen() {
 
       const res = await axios.post('http://10.196.232.32:5000/user/login', {
         tc_no: tcNo,
-        password
+        password,
       });
-
-      console.log("Login yanıtı:", res.data);
 
       const token = res.data?.data?.token;
       const fullName = res.data?.data?.full_name || 'Kullanıcı';
 
       if (!token) {
-        Alert.alert('Hata', 'Sunucudan geçerli bir token alınamadı.');
-        return;
+        return Alert.alert('Sunucu Hatası', 'Token alınamadı. Lütfen tekrar deneyin.');
       }
 
       await AsyncStorage.setItem('token', token);
       await AsyncStorage.setItem('full_name', fullName);
 
-      Alert.alert('Başarılı', 'Giriş başarılı!');
+      Alert.alert('Giriş Başarılı', 'Hoş geldiniz!');
       router.replace('/(drawer)/home');
     } catch (err) {
       console.error('Giriş hatası:', err?.response?.data || err);
-      Alert.alert('Hata', 'TC Kimlik No veya şifre yanlış.');
+      Alert.alert('Hatalı Giriş', 'TC Kimlik No veya şifre yanlış.');
     } finally {
       setLoading(false);
     }
@@ -76,64 +72,99 @@ export default function LoginScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <Text style={styles.title}>Giriş Yap</Text>
+      <View style={styles.card}>
+        <Text style={styles.title}>Giriş Yap</Text>
 
-      <TextInput
-        placeholder="TC Kimlik No"
-        value={tcNo}
-        onChangeText={setTcNo}
-        style={styles.input}
-        keyboardType="numeric"
-        maxLength={11}
-        placeholderTextColor={Colors.gray}
-      />
+        <TextInput
+          placeholder="TC Kimlik No"
+          value={tcNo}
+          onChangeText={setTcNo}
+          style={styles.input}
+          keyboardType="numeric"
+          maxLength={11}
+          placeholderTextColor={Colors.gray}
+        />
 
-      <TextInput
-        placeholder="Şifre"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        style={styles.input}
-        placeholderTextColor={Colors.gray}
-      />
+        <TextInput
+          placeholder="Şifre"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          style={styles.input}
+          placeholderTextColor={Colors.gray}
+        />
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>Giriş Yap</Text>
-        )}
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, loading && { opacity: 0.6 }]}
+          onPress={handleLogin}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Giriş Yap</Text>
+          )}
+        </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => router.push('/register')}>
-        <Text style={styles.link}>Hesabın yok mu? Kayıt ol</Text>
-      </TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push('/register')}>
+          <Text style={styles.link}>Hesabın yok mu? Kayıt Ol</Text>
+        </TouchableOpacity>
+      </View>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, justifyContent: 'center', backgroundColor: Colors.background },
-  title: { fontSize: 28, fontWeight: 'bold', color: Colors.text, marginBottom: 20, textAlign: 'center' },
-  input: {
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  card: {
+    width: '100%',
     backgroundColor: '#fff',
-    padding: 12,
-    marginBottom: 16,
-    borderRadius: 10,
+    padding: 24,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: Colors.text,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  input: {
     borderWidth: 1,
-    borderColor: '#ccc'
+    borderColor: '#ccc',
+    borderRadius: 10,
+    padding: 14,
+    fontSize: 16,
+    marginBottom: 16,
+    backgroundColor: '#fdfdfd',
   },
   button: {
     backgroundColor: Colors.primary,
-    padding: 15,
+    paddingVertical: 16,
     borderRadius: 10,
-    alignItems: 'center'
+    alignItems: 'center',
+    marginTop: 10,
   },
-  buttonText: { color: '#fff', fontWeight: '600' },
+  buttonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 16,
+  },
   link: {
-    color: Colors.info,
     marginTop: 16,
+    color: Colors.info,
     textAlign: 'center',
-    textDecorationLine: 'underline'
-  }
+    textDecorationLine: 'underline',
+    fontSize: 14,
+  },
 });

@@ -1,18 +1,27 @@
 import axios from 'axios';
 import * as Location from 'expo-location';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { Colors } from '../../theme/colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import useAuthRedirect from '../../../hooks/useAuthRedirect'; // 🔐 Giriş kontrolü için
+import useAuthRedirect from '../../../hooks/useAuthRedirect';
 
 export default function HelpScreen() {
-  useAuthRedirect(); // ⛔ Giriş yapılmadıysa login sayfasına yönlendir
+  useAuthRedirect();
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-
   const [token, setToken] = useState<string | null>(null);
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
     const loadToken = async () => {
@@ -23,10 +32,8 @@ export default function HelpScreen() {
   }, []);
 
   const handleSendHelp = async () => {
-    if (!token) {
-      alert('Giriş yapmadan yardım gönderemezsiniz.');
-      return;
-    }
+    if (!token) return alert('Giriş yapmadan yardım gönderemezsiniz.');
+    if (message.trim() === '') return alert('Lütfen bir mesaj yazın.');
 
     setLoading(true);
     setSuccess(false);
@@ -46,7 +53,7 @@ export default function HelpScreen() {
         {
           latitude,
           longitude,
-          message: 'Acil yardım gerekiyor',
+          message,
         },
         {
           headers: {
@@ -56,8 +63,9 @@ export default function HelpScreen() {
         }
       );
 
-      if (res.status === 201 || res.status === 200) {
+      if (res.status === 200 || res.status === 201) {
         setSuccess(true);
+        setMessage('');
       }
     } catch (err) {
       console.error('Yardım gönderme hatası:', err);
@@ -68,26 +76,46 @@ export default function HelpScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <Text style={styles.title}>Konumunuzu bildirerek yardım çağırabilirsiniz.</Text>
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handleSendHelp}
-        disabled={loading}
-      >
+      <TextInput
+        style={styles.input}
+        placeholder="Yardım mesajınızı yazın..."
+        placeholderTextColor={Colors.gray}
+        value={message}
+        onChangeText={setMessage}
+        multiline
+      />
+
+      <TouchableOpacity style={styles.button} onPress={handleSendHelp} disabled={loading}>
         <Text style={styles.buttonText}>🆘 Yardım Çağır</Text>
       </TouchableOpacity>
 
       {loading && <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 20 }} />}
       {success && <Text style={styles.success}>✅ Yardım çağrınız iletildi!</Text>}
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  title: { fontSize: 16, marginBottom: 30, textAlign: 'center', color: Colors.text },
+  title: { fontSize: 16, marginBottom: 20, textAlign: 'center', color: Colors.text },
+  input: {
+    width: '100%',
+    height: 100,
+    borderColor: Colors.gray,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 10,
+    textAlignVertical: 'top',
+    marginBottom: 20,
+    color: Colors.text,
+    backgroundColor: '#fff',
+  },
   button: {
     backgroundColor: Colors.primary,
     paddingVertical: 15,

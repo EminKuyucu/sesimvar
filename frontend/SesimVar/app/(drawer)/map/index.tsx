@@ -9,9 +9,9 @@ import {
   Text,
   View,
 } from 'react-native';
-import MapView, { Callout, Marker } from 'react-native-maps';
+import MapView, { Callout, Marker, Circle } from 'react-native-maps';
 import { Colors } from '../../theme/colors';
-import useAuthRedirect from '../../../hooks/useAuthRedirect'; // 🔐 Token kontrolü
+import useAuthRedirect from '../../../hooks/useAuthRedirect';
 
 type MarkerItem = {
   id: number | string;
@@ -19,6 +19,7 @@ type MarkerItem = {
   longitude: number;
   type?: 'help' | 'safe' | 'area';
   created_at?: string;
+  message?: string;
   user?: {
     name: string;
     health_condition: string;
@@ -26,18 +27,13 @@ type MarkerItem = {
 };
 
 export default function MapScreen() {
-  useAuthRedirect(); // ⛔ Token yoksa login sayfasına yönlendir
+  useAuthRedirect();
 
   const [helpCalls, setHelpCalls] = useState<MarkerItem[]>([]);
   const [safeStatus, setSafeStatus] = useState<MarkerItem[]>([]);
-  const [userLocation, setUserLocation] = useState({
-    latitude: 37.0,
-    longitude: 35.3,
-  });
-  const [selectedFilter, setSelectedFilter] = useState<
-    'all' | 'help' | 'safe' | 'area'
-  >('all');
+  const [userLocation, setUserLocation] = useState({ latitude: 37.0, longitude: 35.3 });
   const [loading, setLoading] = useState(true);
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'help' | 'safe' | 'area'>('all');
 
   const assemblyAreas: MarkerItem[] = [
     { id: 'A1', latitude: 37.002, longitude: 35.322, type: 'area' },
@@ -45,68 +41,68 @@ export default function MapScreen() {
   ];
 
   useEffect(() => {
-    const fetchAll = async () => {
+    let intervalId: NodeJS.Timeout;
+
+    const fetchData = async () => {
       try {
         const token = await AsyncStorage.getItem('token');
-        if (!token) {
-          alert('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
-          return;
-        }
+        if (!token) return;
 
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          alert('Konum izni reddedildi');
-          return;
-        }
+        const [helpRes, safeRes] = await Promise.all([
+          axios.get('http://10.196.232.32:5000/user/help-calls', {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get('http://10.196.232.32:5000/user/safe-status', {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
 
-        const loc = await Location.getCurrentPositionAsync({});
-        setUserLocation({
-          latitude: loc.coords.latitude,
-          longitude: loc.coords.longitude,
-        });
-
-        const helpRes = await axios.get('http://10.196.232.32:5000/user/help-calls', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const safeRes = await axios.get('http://10.196.232.32:5000/user/safe-status', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const helpData = helpRes.data.map((item: any) => ({
-          ...item,
-          type: 'help' as const,
-        }));
-
-        const safeData = safeRes.data.map((item: any) => ({
-          ...item,
-          type: 'safe' as const,
-        }));
+        const helpData = helpRes.data.map((item: any) => ({ ...item, type: 'help' as const }));
+        const safeData = safeRes.data.map((item: any) => ({ ...item, type: 'safe' as const }));
 
         setHelpCalls(helpData);
         setSafeStatus(safeData);
       } catch (err) {
-        console.error('Veri çekme hatası:', err);
-        alert('Veriler alınamadı. Lütfen tekrar deneyin.');
+        console.error('Otomatik veri çekme hatası:', err);
+      }
+    };
+
+    const initialize = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        if (!token) return alert('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') return alert('Konum izni verilmedi.');
+
+        const loc = await Location.getCurrentPositionAsync({});
+        setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+
+        await fetchData();
+        intervalId = setInterval(fetchData, 30000);
+      } catch (err) {
+        console.error('İlk veri çekme hatası:', err);
+        alert('Veriler alınamadı.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAll();
+    initialize();
+
+    return () => clearInterval(intervalId);
   }, []);
 
   const calculateMinutesAgo = (timestamp: string) => {
     const now = new Date();
     const created = new Date(timestamp);
-    const diffMs = now.getTime() - created.getTime();
-    return Math.floor(diffMs / 60000);
+    return Math.floor((now.getTime() - created.getTime()) / 60000);
   };
 
   const allMarkers = [...helpCalls, ...safeStatus, ...assemblyAreas];
 
-  const filteredMarkers = allMarkers.filter((m) =>
-    selectedFilter === 'all' ? true : m.type === selectedFilter
+  const filteredMarkers = allMarkers.filter((marker) =>
+    selectedFilter === 'all' ? true : marker.type === selectedFilter
   );
 
   return (
@@ -124,13 +120,19 @@ export default function MapScreen() {
               longitudeDelta: 0.05,
             }}
           >
+            {/* Kullanıcı konumu */}
+            <Marker
+              coordinate={userLocation}
+              pinColor="blue"
+              title="Konumunuz"
+              description="Şu anki konumunuz"
+            />
+
+            {/* Markerlar */}
             {filteredMarkers.map((marker) => (
               <Marker
                 key={marker.id}
-                coordinate={{
-                  latitude: marker.latitude,
-                  longitude: marker.longitude,
-                }}
+                coordinate={{ latitude: marker.latitude, longitude: marker.longitude }}
                 pinColor={
                   marker.type === 'help'
                     ? Colors.primary
@@ -139,36 +141,57 @@ export default function MapScreen() {
                     : Colors.info
                 }
               >
-                {marker.type === 'help' && marker.user && (
+                {(marker.type === 'help' || marker.type === 'safe') && (
                   <Callout>
-                    <View style={{ maxWidth: 200 }}>
-                      <Text style={{ fontWeight: 'bold' }}>
-                        👤 {marker.user.name}
-                      </Text>
-                      <Text>❤️ {marker.user.health_condition}</Text>
-                      <Text>
-                        ⏱️ {calculateMinutesAgo(marker.created_at!)} dk önce
-                      </Text>
+                    <View style={{ maxWidth: 220 }}>
+                      {marker.user && (
+                        <>
+                          <Text style={{ fontWeight: 'bold' }}>👤 {marker.user.name}</Text>
+                          <Text>❤️ {marker.user.health_condition}</Text>
+                        </>
+                      )}
+                      {marker.message && <Text>🆘 Mesaj: {marker.message}</Text>}
+                      {marker.created_at && (
+                        <Text>⏱️ {calculateMinutesAgo(marker.created_at)} dk önce</Text>
+                      )}
                     </View>
                   </Callout>
                 )}
               </Marker>
             ))}
+
+            {/* Toplanma alanı daireleri */}
+            {assemblyAreas.map((area) => (
+              <Circle
+                key={`circle-${area.id}`}
+                center={{ latitude: area.latitude, longitude: area.longitude }}
+                radius={150}
+                strokeColor="#2E7D32"
+                fillColor="rgba(76, 175, 80, 0.2)"
+              />
+            ))}
           </MapView>
 
+          {/* Filtreler */}
           <View style={styles.filters}>
-            <Text style={styles.filter} onPress={() => setSelectedFilter('all')}>
-              Tümü
-            </Text>
-            <Text style={styles.filter} onPress={() => setSelectedFilter('help')}>
-              Yardım
-            </Text>
-            <Text style={styles.filter} onPress={() => setSelectedFilter('safe')}>
-              Güvende
-            </Text>
-            <Text style={styles.filter} onPress={() => setSelectedFilter('area')}>
-              Toplanma
-            </Text>
+            {['all', 'help', 'safe', 'area'].map((type) => (
+              <Text
+                key={type}
+                style={[
+                  styles.filter,
+                  selectedFilter === type && { textDecorationLine: 'underline' },
+                ]}
+                onPress={() => setSelectedFilter(type as any)}
+              >
+                {type === 'all'
+                  ? 'Tümü'
+                  : type === 'help'
+                  ? 'Yardım'
+                  : type === 'safe'
+                  ? 'Güvende'
+                  : 'Toplanma'}
+              </Text>
+            ))}
           </View>
         </>
       )}

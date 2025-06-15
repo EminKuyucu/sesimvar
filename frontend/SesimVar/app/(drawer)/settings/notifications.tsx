@@ -8,14 +8,18 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { Colors } from '../../theme/colors';
-import useAuthRedirect from '../../../hooks/useAuthRedirect'; // 🔐 Giriş kontrolü
+import useAuthRedirect from '../../../hooks/useAuthRedirect';
 
 export default function NotificationSettingsScreen() {
-  useAuthRedirect(); // 🔐 Token yoksa login ekranına yönlendir
+  useAuthRedirect();
 
   const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
   const [settings, setSettings] = useState({
     general: false,
     emergency: true,
@@ -25,7 +29,9 @@ export default function NotificationSettingsScreen() {
   useEffect(() => {
     const fetchSettings = async () => {
       const storedToken = await AsyncStorage.getItem('token');
+      if (!storedToken) return;
       setToken(storedToken);
+      setLoading(true);
 
       try {
         const res = await axios.get('http://10.196.232.32:5000/user/notifications', {
@@ -40,6 +46,8 @@ export default function NotificationSettingsScreen() {
       } catch (err) {
         console.error('Bildirim ayarları alınamadı:', err);
         Alert.alert('Hata', 'Bildirim ayarları yüklenemedi.');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -51,7 +59,10 @@ export default function NotificationSettingsScreen() {
   };
 
   const handleSave = async () => {
+    if (!token) return;
+
     try {
+      setLoading(true);
       await axios.put('http://10.196.232.32:5000/user/notifications', settings, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -59,81 +70,100 @@ export default function NotificationSettingsScreen() {
     } catch (err) {
       console.error('Kaydetme hatası:', err);
       Alert.alert('Hata', 'Ayarlar kaydedilemedi.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>🔔 Bildirim Ayarları</Text>
 
-      <View style={styles.row}>
-        <Text style={styles.label}>Genel Bildirimler</Text>
-        <Switch
-          value={settings.general}
-          onValueChange={() => toggleSwitch('general')}
-        />
-      </View>
+      <SettingRow
+        label="Genel Bildirimler"
+        value={settings.general}
+        onToggle={() => toggleSwitch('general')}
+      />
+      <SettingRow
+        label="Acil Durum Bildirimleri"
+        value={settings.emergency}
+        onToggle={() => toggleSwitch('emergency')}
+      />
+      <SettingRow
+        label="Sessiz Mod"
+        value={settings.silentMode}
+        onToggle={() => toggleSwitch('silentMode')}
+      />
 
-      <View style={styles.row}>
-        <Text style={styles.label}>Acil Durum Bildirimleri</Text>
-        <Switch
-          value={settings.emergency}
-          onValueChange={() => toggleSwitch('emergency')}
-        />
-      </View>
-
-      <View style={styles.row}>
-        <Text style={styles.label}>Sessiz Mod</Text>
-        <Switch
-          value={settings.silentMode}
-          onValueChange={() => toggleSwitch('silentMode')}
-        />
-      </View>
-
-      <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-        <Text style={styles.saveButtonText}>Kaydet</Text>
+      <TouchableOpacity
+        style={[styles.button, loading && { opacity: 0.6 }]}
+        onPress={handleSave}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Kaydet</Text>
+        )}
       </TouchableOpacity>
+    </ScrollView>
+  );
+}
+
+function SettingRow({
+  label,
+  value,
+  onToggle,
+}: {
+  label: string;
+  value: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <View style={styles.row}>
+      <Text style={styles.label}>{label}</Text>
+      <Switch value={value} onValueChange={onToggle} />
     </View>
   );
 }
 
-NotificationSettingsScreen.options = {
-  title: 'Bildirimler',
-};
-
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    padding: 24,
     backgroundColor: Colors.background,
-    padding: 20,
   },
   title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    color: Colors.text,
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 24,
     textAlign: 'center',
+    color: Colors.text,
   },
   row: {
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    marginBottom: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 18,
   },
   label: {
     fontSize: 16,
     color: Colors.text,
   },
-  saveButton: {
+  button: {
     backgroundColor: Colors.safe,
-    padding: 14,
-    borderRadius: 10,
+    paddingVertical: 16,
+    borderRadius: 12,
     alignItems: 'center',
     marginTop: 30,
   },
-  saveButtonText: {
+  buttonText: {
     color: '#fff',
-    fontWeight: 'bold',
+    fontWeight: '600',
     fontSize: 16,
   },
 });

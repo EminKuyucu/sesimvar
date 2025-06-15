@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import useAuthRedirect from '../../hooks/useAuthRedirect'; // 🔐
-import { Colors } from '../theme/colors';
+import { Colors } from '../../theme/colors'; // ✅ düzeltildi
 
 export default function HomeScreen() {
   useAuthRedirect(); // 🔐 Token kontrolü
@@ -55,7 +55,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Hoş geldin👋</Text>
+      <Text style={styles.title}>Hoş geldin 👋</Text>
       <Text style={styles.subtitle}>
         Afet anında hızlıca yardım çağırabilirsin.
       </Text>
@@ -67,10 +67,6 @@ export default function HomeScreen() {
     </View>
   );
 }
-
-HomeScreen.options = {
-  title: 'Ana Sayfa',
-};
 
 const styles = StyleSheet.create({
   container: {

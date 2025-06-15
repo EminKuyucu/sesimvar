@@ -9,20 +9,22 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { Colors } from '../../theme/colors';
-import useAuthRedirect from '../../../hooks/useAuthRedirect'; // 🔒 Giriş koruması eklendi
+import useAuthRedirect from '../../../hooks/useAuthRedirect';
 
 export default function AccountSettingsScreen() {
-  useAuthRedirect(); // 🔒 Giriş yapılmadıysa login sayfasına yönlendir
+  useAuthRedirect();
 
   const router = useRouter();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleLogout = async () => {
-    await AsyncStorage.removeItem('token');
-    await AsyncStorage.removeItem('full_name');
+    await AsyncStorage.multiRemove(['token', 'full_name']);
     Alert.alert('Çıkış yapıldı');
     router.replace('/login');
   };
@@ -56,10 +58,16 @@ export default function AccountSettingsScreen() {
   };
 
   const handlePasswordChange = async () => {
+    if (!currentPassword || !newPassword) {
+      Alert.alert('Eksik Bilgi', 'Her iki şifre alanını da doldurun.');
+      return;
+    }
+
     const token = await AsyncStorage.getItem('token');
     try {
+      setLoading(true);
       await axios.put(
-        'http://10.196.232.32:5000/user/password', // ⚠️ Bu endpoint backend'de varsa çalışır
+        'http://10.196.232.32:5000/user/password',
         {
           current_password: currentPassword,
           new_password: newPassword,
@@ -74,11 +82,13 @@ export default function AccountSettingsScreen() {
     } catch (err) {
       console.error('Şifre değiştirme hatası:', err);
       Alert.alert('Hata', 'Şifre güncellenemedi.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>🔐 Şifre Güncelle</Text>
 
       <TextInput
@@ -97,8 +107,16 @@ export default function AccountSettingsScreen() {
         onChangeText={setNewPassword}
       />
 
-      <TouchableOpacity style={styles.button} onPress={handlePasswordChange}>
-        <Text style={styles.buttonText}>Şifreyi Güncelle</Text>
+      <TouchableOpacity
+        style={[styles.button, loading && { opacity: 0.6 }]}
+        onPress={handlePasswordChange}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Şifreyi Güncelle</Text>
+        )}
       </TouchableOpacity>
 
       <Text style={styles.title}>🚪 Oturum</Text>
@@ -110,7 +128,7 @@ export default function AccountSettingsScreen() {
       <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
         <Text style={styles.buttonText}>Hesabı Sil</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -120,46 +138,48 @@ AccountSettingsScreen.options = {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    padding: 24,
     backgroundColor: Colors.background,
-    padding: 20,
   },
   title: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '700',
     marginVertical: 16,
     color: Colors.text,
+    textAlign: 'center',
   },
   input: {
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray,
-    paddingVertical: 10,
-    marginBottom: 15,
-    fontSize: 15,
-    color: Colors.text,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    backgroundColor: '#fff',
+    padding: 14,
+    borderRadius: 10,
+    fontSize: 16,
+    marginBottom: 16,
   },
   button: {
     backgroundColor: Colors.safe,
-    padding: 12,
+    paddingVertical: 14,
     borderRadius: 10,
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 32,
   },
   logoutButton: {
     backgroundColor: Colors.primary,
-    padding: 12,
+    paddingVertical: 14,
     borderRadius: 10,
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 16,
   },
   deleteButton: {
     backgroundColor: '#B71C1C',
-    padding: 12,
+    paddingVertical: 14,
     borderRadius: 10,
     alignItems: 'center',
   },
   buttonText: {
     color: '#fff',
-    fontWeight: 'bold',
+    fontWeight: '600',
+    fontSize: 16,
   },
 });

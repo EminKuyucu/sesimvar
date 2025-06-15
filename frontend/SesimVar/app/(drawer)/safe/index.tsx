@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import * as Location from 'expo-location';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   StyleSheet,
@@ -10,33 +10,33 @@ import {
   View,
 } from 'react-native';
 import { Colors } from '../../theme/colors';
-import useAuthRedirect from '../../../hooks/useAuthRedirect'; // 🔐 Token kontrolü
+import useAuthRedirect from '../../../hooks/useAuthRedirect';
 
 export default function SafeScreen() {
-  useAuthRedirect(); // ⛔ Token yoksa login'e yönlendir
+  useAuthRedirect();
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [token, setToken] = useState<string | null>(null);
-  const [locationError, setLocationError] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
-    const getToken = async () => {
+    const fetchToken = async () => {
       const storedToken = await AsyncStorage.getItem('token');
       setToken(storedToken);
     };
-    getToken();
+    fetchToken();
   }, []);
 
-  const handleSendSafe = async () => {
+  const handleSendSafe = useCallback(async () => {
     setLoading(true);
     setSuccess(false);
-    setLocationError('');
+    setErrorMsg('');
 
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        setLocationError('Konum izni verilmedi. Lütfen ayarlardan izin verin.');
+        setErrorMsg('Konum izni verilmedi. Ayarlardan izin vermelisiniz.');
         return;
       }
 
@@ -56,19 +56,21 @@ export default function SafeScreen() {
 
       if (res.status === 201 || res.status === 200) {
         setSuccess(true);
+      } else {
+        setErrorMsg('Sunucu hatası. Lütfen tekrar deneyin.');
       }
     } catch (err) {
       console.error('Güvende bildirimi hatası:', err);
-      setLocationError('Bildirim gönderilemedi. Lütfen daha sonra tekrar deneyin.');
+      setErrorMsg('Bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>
-        Konumunuzu bildirerek güvende olduğunuzu belirtebilirsiniz.
+        Konumunu bildirerek güvende olduğunu iletebilirsin.
       </Text>
 
       <TouchableOpacity
@@ -77,38 +79,61 @@ export default function SafeScreen() {
         disabled={loading || success}
       >
         <Text style={styles.buttonText}>
-          {success ? '✅ Gönderildi' : '✅ Güvendeyim'}
+          {success ? '✅ Bildirildi' : '✅ Güvendeyim'}
         </Text>
       </TouchableOpacity>
 
       {loading && (
-        <ActivityIndicator size="large" color={Colors.safe} style={{ marginTop: 20 }} />
+        <ActivityIndicator size="large" color={Colors.safe} style={styles.indicator} />
       )}
 
-      {locationError !== '' && (
-        <Text style={styles.error}>{locationError}</Text>
-      )}
+      {!!errorMsg && <Text style={styles.error}>{errorMsg}</Text>}
 
-      {success && (
-        <Text style={styles.success}>✅ Bildiriminiz başarıyla gönderildi!</Text>
-      )}
+      {success && <Text style={styles.success}>✅ Bildirim başarıyla gönderildi!</Text>}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  title: { fontSize: 16, marginBottom: 30, textAlign: 'center', color: Colors.text },
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  title: {
+    fontSize: 16,
+    marginBottom: 30,
+    textAlign: 'center',
+    color: Colors.text,
+  },
   button: {
     backgroundColor: Colors.safe,
     paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 10,
+    paddingHorizontal: 32,
+    borderRadius: 12,
   },
   buttonSuccess: {
     backgroundColor: '#2E7D32',
   },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  success: { marginTop: 20, fontSize: 16, color: Colors.safe },
-  error: { marginTop: 20, fontSize: 14, color: 'red', textAlign: 'center' },
+  buttonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  indicator: {
+    marginTop: 20,
+  },
+  success: {
+    color: Colors.safe,
+    fontSize: 16,
+    marginTop: 20,
+  },
+  error: {
+    color: 'red',
+    fontSize: 14,
+    marginTop: 20,
+    textAlign: 'center',
+  },
 });
