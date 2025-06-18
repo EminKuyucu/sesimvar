@@ -1,6 +1,6 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import * as Location from 'expo-location';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -9,9 +9,9 @@ import {
   Text,
   View,
 } from 'react-native';
-import MapView, { Callout, Marker, Circle } from 'react-native-maps';
-import { Colors } from '../../theme/colors';
+import MapView, { Callout, Circle, Marker } from 'react-native-maps';
 import useAuthRedirect from '../../../hooks/useAuthRedirect';
+import { Colors } from '../../theme/colors';
 
 type MarkerItem = {
   id: number | string;
@@ -73,17 +73,28 @@ export default function MapScreen() {
         if (!token) return alert('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
 
         const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') return alert('Konum izni verilmedi.');
+        if (status !== 'granted') throw new Error('Konum izni verilmedi');
 
         const loc = await Location.getCurrentPositionAsync({});
-        setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+        const coords = {
+          latitude: loc.coords.latitude,
+          longitude: loc.coords.longitude,
+        };
 
+        setUserLocation(coords);
+        await AsyncStorage.setItem('lastLocation', JSON.stringify(coords)); // ✅ Konumu sakla
+      } catch (err) {
+        console.warn('Canlı konum alınamadı, son konum gösterilecek.');
+        const saved = await AsyncStorage.getItem('lastLocation');
+        if (saved) {
+          const coords = JSON.parse(saved);
+          setUserLocation(coords); // ✅ Kayıtlı konumu yükle
+        } else {
+          setUserLocation({ latitude: 37.0, longitude: 35.3 }); // fallback
+        }
+      } finally {
         await fetchData();
         intervalId = setInterval(fetchData, 30000);
-      } catch (err) {
-        console.error('İlk veri çekme hatası:', err);
-        alert('Veriler alınamadı.');
-      } finally {
         setLoading(false);
       }
     };
@@ -120,7 +131,6 @@ export default function MapScreen() {
               longitudeDelta: 0.05,
             }}
           >
-            {/* Kullanıcı konumu */}
             <Marker
               coordinate={userLocation}
               pinColor="blue"
@@ -128,7 +138,6 @@ export default function MapScreen() {
               description="Şu anki konumunuz"
             />
 
-            {/* Markerlar */}
             {filteredMarkers.map((marker) => (
               <Marker
                 key={marker.id}
@@ -160,7 +169,6 @@ export default function MapScreen() {
               </Marker>
             ))}
 
-            {/* Toplanma alanı daireleri */}
             {assemblyAreas.map((area) => (
               <Circle
                 key={`circle-${area.id}`}
@@ -172,7 +180,6 @@ export default function MapScreen() {
             ))}
           </MapView>
 
-          {/* Filtreler */}
           <View style={styles.filters}>
             {['all', 'help', 'safe', 'area'].map((type) => (
               <Text
