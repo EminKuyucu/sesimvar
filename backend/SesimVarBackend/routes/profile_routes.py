@@ -26,7 +26,10 @@ def get_profile():
         user_id = request.user_id
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT id, tc_no, full_name, phone_number FROM users WHERE id = %s", (user_id,))
+        cursor.execute("""
+            SELECT id, tc_no, full_name, phone_number, blood_type, health_status
+            FROM users WHERE id = %s
+        """, (user_id,))
         user = cursor.fetchone()
         conn.close()
 
@@ -76,7 +79,7 @@ def delete_profile():
 
         return jsonify({
             "status": "success",
-            "message": "Hesap silindi"
+            "message": "Hesap silindi. Oturum sonlandırıldı."
         }), 200
 
     except Exception as e:
