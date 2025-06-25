@@ -3,17 +3,16 @@ import axios from 'axios';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
-  View,
-  ActivityIndicator,
-  ScrollView,
+  TouchableOpacity
 } from 'react-native';
-import { Colors } from '../../theme/colors';
 import useAuthRedirect from '../../../hooks/useAuthRedirect';
+import { Colors } from '../../theme/colors';
 
 export default function AccountSettingsScreen() {
   useAuthRedirect();
@@ -41,7 +40,7 @@ export default function AccountSettingsScreen() {
           onPress: async () => {
             const token = await AsyncStorage.getItem('token');
             try {
-              await axios.delete('http://10.196.232.32:5000/user/profile', {
+              await axios.delete('http://192.168.31.73:5000/user/profile', {
                 headers: { Authorization: `Bearer ${token}` },
               });
               Alert.alert('Hesap silindi');
@@ -67,7 +66,7 @@ export default function AccountSettingsScreen() {
     try {
       setLoading(true);
       await axios.put(
-        'http://10.196.232.32:5000/user/password',
+        'http://192.168.31.73:5000/user/password',
         {
           current_password: currentPassword,
           new_password: newPassword,

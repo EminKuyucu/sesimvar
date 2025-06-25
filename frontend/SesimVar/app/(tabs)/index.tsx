@@ -1,16 +1,16 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  Alert,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
 
 export default function LoginScreen() {
   const [tc, setTc] = useState('');
@@ -27,7 +27,7 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      const res = await axios.post('http://10.196.232.32:5000/user/login', {
+      const res = await axios.post('http://192.168.31.73:5000/user/login', {
         tc_no: tc,
         password: password,
       });

@@ -22,7 +22,7 @@ export default function AddressScreen() {
   // 🟢 Mahalleleri Çek
   useEffect(() => {
     axios
-      .get('http://10.196.232.32:5000/neighborhoods')
+      .get('http://192.168.31.73:5000/neighborhoods')
       .then((res) => setNeighborhoods(res.data))
       .catch((err) => {
         console.error('Mahalleleri alma hatası:', err);
@@ -62,7 +62,7 @@ export default function AddressScreen() {
       };
 
       const res = await axios.post(
-        'http://10.196.232.32:5000/user/address',
+        'http://192.168.31.73:5000/user/address',
         body,
         {
           headers: {

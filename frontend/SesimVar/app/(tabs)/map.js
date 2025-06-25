@@ -1,9 +1,9 @@
-import { StyleSheet, Text, View, Dimensions } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
-import { useEffect, useState } from 'react';
-import * as Location from 'expo-location';
-import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import * as Location from 'expo-location';
+import { useEffect, useState } from 'react';
+import { Dimensions, StyleSheet, Text, View } from 'react-native';
+import MapView, { Marker } from 'react-native-maps';
 
 export default function MapScreen() {
   const [region, setRegion] = useState(null);
@@ -32,7 +32,7 @@ export default function MapScreen() {
       const token = await AsyncStorage.getItem('token');
 
       try {
-        const helpRes = await axios.get('http://10.196.232.32:5000/user/help-calls', {
+        const helpRes = await axios.get('http://192.168.31.73:5000/user/help-calls', {
           headers: { Authorization: `Bearer ${token}` },
         });
         setHelpCalls(helpRes.data.data || []);
@@ -41,7 +41,7 @@ export default function MapScreen() {
       }
 
       try {
-        const safeRes = await axios.get('http://10.196.232.32:5000/user/safe-status', {
+        const safeRes = await axios.get('http://192.168.31.73:5000/user/safe-status', {
           headers: { Authorization: `Bearer ${token}` },
         });
         setSafeStatus(safeRes.data.data || []);

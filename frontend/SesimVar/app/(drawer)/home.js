@@ -33,7 +33,7 @@ export default function HomeScreen() {
       const { latitude, longitude } = location.coords;
 
       await axios.post(
-        'http://10.196.232.32:5000/user/help-calls',
+        'http://192.168.31.73:5000/user/help-calls',
         {
           message: 'Yardım edin!',
           latitude,

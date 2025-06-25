@@ -43,7 +43,7 @@ export default function LoginScreen() {
     try {
       setLoading(true);
 
-      const res = await axios.post('http://10.196.232.32:5000/user/login', {
+      const res = await axios.post('http://192.168.31.73:5000/user/login', {
         tc_no: tcNo,
         password,
       });

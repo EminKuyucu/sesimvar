@@ -1,6 +1,6 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -52,7 +52,7 @@ export default function RegisterScreen() {
 
     try {
       setLoading(true);
-      const res = await axios.post('http://10.196.232.32:5000/user/register', {
+      const res = await axios.post('http://192.168.31.73:5000/user/register', {
         full_name: fullName,
         tc_no: tcNo,
         phone_number: phone,

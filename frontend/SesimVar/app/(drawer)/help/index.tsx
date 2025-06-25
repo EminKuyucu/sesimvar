@@ -1,19 +1,18 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import * as Location from 'expo-location';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
-  View,
-  KeyboardAvoidingView,
-  Platform,
+  TouchableOpacity
 } from 'react-native';
-import { Colors } from '../../theme/colors';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import useAuthRedirect from '../../../hooks/useAuthRedirect';
+import { Colors } from '../../theme/colors';
 
 export default function HelpScreen() {
   useAuthRedirect();
@@ -49,7 +48,7 @@ export default function HelpScreen() {
       const { latitude, longitude } = location.coords;
 
       const res = await axios.post(
-        'http://10.192.237.249:5000/user/help-calls',
+        'http://192.168.31.73:5000/user/help-calls',
         {
           latitude,
           longitude,

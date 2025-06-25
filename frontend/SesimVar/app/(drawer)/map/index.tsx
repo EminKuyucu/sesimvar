@@ -49,10 +49,10 @@ export default function MapScreen() {
         if (!token) return;
 
         const [helpRes, safeRes] = await Promise.all([
-          axios.get('http://10.196.232.32:5000/user/help-calls', {
+          axios.get('http://192.168.31.73:5000/user/help-calls', {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          axios.get('http://10.196.232.32:5000/user/safe-status', {
+          axios.get('http://192.168.31.73:5000/user/safe-status', {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ]);

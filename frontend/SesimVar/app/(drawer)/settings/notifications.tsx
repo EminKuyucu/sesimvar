@@ -2,17 +2,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
+  ScrollView,
   StyleSheet,
   Switch,
   Text,
   TouchableOpacity,
   View,
-  ActivityIndicator,
-  ScrollView,
 } from 'react-native';
-import { Colors } from '../../theme/colors';
 import useAuthRedirect from '../../../hooks/useAuthRedirect';
+import { Colors } from '../../theme/colors';
 
 export default function NotificationSettingsScreen() {
   useAuthRedirect();
@@ -34,7 +34,7 @@ export default function NotificationSettingsScreen() {
       setLoading(true);
 
       try {
-        const res = await axios.get('http://10.196.232.32:5000/user/notifications', {
+        const res = await axios.get('http://192.168.31.732:5000/user/notifications', {
           headers: { Authorization: `Bearer ${storedToken}` },
         });
 
@@ -63,7 +63,7 @@ export default function NotificationSettingsScreen() {
 
     try {
       setLoading(true);
-      await axios.put('http://10.196.232.32:5000/user/notifications', settings, {
+      await axios.put('http://192.168.31.73:5000/user/notifications', settings, {
         headers: { Authorization: `Bearer ${token}` },
       });
       Alert.alert('Başarılı', 'Bildirim ayarları güncellendi.');
