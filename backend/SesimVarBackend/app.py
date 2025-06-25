@@ -11,6 +11,12 @@ from routes.auth_routes import auth_bp
 from routes.profile_routes import profile_bp
 from routes.safe_routes import safe_bp
 from routes.help_routes import help_bp
+from routes.notifications_routes import notifications_bp
+from routes.push_routes import push_bp
+from routes.simulation_routes import simulation_bp
+from routes.address import address_bp
+from routes.neighborhood import neighborhood_bp
+from scheduler import start_scheduler
 
 # Diğer blueprint'leri de taşıdıkça buraya eklenecek: profile_bp, help_bp, safe_bp
 load_dotenv()
@@ -62,7 +68,12 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(profile_bp)
 app.register_blueprint(safe_bp)
 app.register_blueprint(help_bp)
-# Diğerleri: app.register_blueprint(profile_bp), help_bp, safe_bp ... ekleyeceğiz
+app.register_blueprint(notifications_bp)
+app.register_blueprint(push_bp)
+app.register_blueprint(simulation_bp)
+app.register_blueprint(address_bp)
+app.register_blueprint(neighborhood_bp)
+start_scheduler()
 
 # 🚀 Uygulama Başlatma
 if __name__ == "__main__":

@@ -6,6 +6,29 @@ from auth import token_required
 
 help_bp = Blueprint('help', __name__, url_prefix='/user')
 
+# 🔍 AI destekli risk analiz fonksiyonları
+def classify_zone_risk(latitude, longitude, conn):
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT COUNT(*) AS nearby_calls
+        FROM help_requests
+        WHERE ABS(latitude - %s) < 0.01 AND ABS(longitude - %s) < 0.01
+    """, (latitude, longitude))
+    count = cursor.fetchone()["nearby_calls"]
+
+    if count > 20:
+        return "yüksek"
+    elif count > 10:
+        return "orta"
+    else:
+        return "düşük"
+
+def determine_user_risk(message):
+    critical_words = ["enkaz", "yangın", "nefes", "kan", "yaralı", "çökme", "sıkıştım"]
+    for word in critical_words:
+        if word in message.lower():
+            return "kritik"
+    return "orta"
 
 # 🔸 POST - Yardım Çağrısı Oluştur
 @help_bp.route('/help-calls', methods=['POST'])
@@ -39,8 +62,6 @@ def create_help_call():
     responses:
       201:
         description: Çağrı oluşturuldu
-      400:
-        description: Eksik bilgi
     """
     try:
         user_id = request.user_id
@@ -53,22 +74,29 @@ def create_help_call():
             return jsonify({"status": "error", "message": "Tüm alanlar zorunludur."}), 400
 
         conn = get_db_connection()
+        zone_risk = classify_zone_risk(latitude, longitude, conn)
+        user_risk = determine_user_risk(message)
+
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO help_requests (user_id, message, latitude, longitude, created_at)
-            VALUES (%s, %s, %s, %s, NOW())
-        """, (user_id, message, latitude, longitude))
+            INSERT INTO help_requests (user_id, message, latitude, longitude, zone_risk, user_risk, status, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, NOW())
+        """, (user_id, message, latitude, longitude, zone_risk, user_risk, "aktif"))
         conn.commit()
         conn.close()
 
-        return jsonify({"status": "success", "message": "Yardım çağrısı oluşturuldu."}), 201
+        return jsonify({
+            "status": "success",
+            "message": "Yardım çağrısı oluşturuldu.",
+            "zone_risk": zone_risk,
+            "user_risk": user_risk
+        }), 201
 
     except Exception as e:
-        print(f"[CREATE_HELP_CALL ERROR] {e}")
+        print(f"[HELP_CALL ERROR] {str(e)}")
         return jsonify({"status": "error", "message": "İşlem başarısız"}), 500
 
-
-# 🔹 Yardım Çağrılarını Getir (Harita uyumlu)
+# 🔹 GET - Yardım Çağrılarını Getir
 @help_bp.route('/help-calls', methods=['GET'])
 @token_required
 def get_help_calls():
@@ -96,7 +124,6 @@ def get_help_calls():
         result = cursor.fetchall()
         conn.close()
 
-        # ✅ Harita uyumlu JSON cevabı
         formatted = []
         for row in result:
             created = row["created_at"]
@@ -117,7 +144,6 @@ def get_help_calls():
     except Exception as e:
         print(f"[GET_HELP_CALLS ERROR] {str(e)}")
         return jsonify({"status": "error", "message": "Veri alınamadı"}), 500
-
 
 # 🔄 PUT - Yardım Çağrısı Güncelle
 @help_bp.route('/help-calls/<int:help_id>', methods=['PUT'])
@@ -154,10 +180,6 @@ def update_help_call(help_id):
     responses:
       200:
         description: Güncelleme başarılı
-      400:
-        description: Eksik bilgi
-      404:
-        description: Kayıt bulunamadı
     """
     try:
         user_id = request.user_id
@@ -192,6 +214,59 @@ def update_help_call(help_id):
         print(f"[UPDATE_HELP_CALL ERROR] {e}")
         return jsonify({"status": "error", "message": "Güncelleme hatası"}), 500
 
+# 🔄 PUT - Yardım Durumu Güncelle
+@help_bp.route('/help-calls/<int:help_id>/status', methods=['PUT'])
+@token_required
+def update_help_status(help_id):
+    """
+    Yardım Durumu Güncelle
+    ---
+    tags:
+      - Yardım
+    security:
+      - Bearer: []
+    parameters:
+      - name: help_id
+        in: path
+        required: true
+        type: integer
+        description: Yardım çağrısı ID
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: "tamamlandı"  # aktif, tamamlandı, iptal
+    responses:
+      200:
+        description: Durum güncellendi
+    """
+    try:
+        user_id = request.user_id
+        data = request.get_json()
+        new_status = data.get("status")
+
+        if not new_status:
+            return jsonify({"status": "error", "message": "Yeni durum girilmedi."}), 400
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE help_requests
+            SET status = %s
+            WHERE id = %s AND user_id = %s
+        """, (new_status, help_id, user_id))
+        conn.commit()
+        conn.close()
+
+        return jsonify({"status": "success", "message": "Durum güncellendi."}), 200
+
+    except Exception as e:
+        print(f"[UPDATE_STATUS ERROR] {str(e)}")
+        return jsonify({"status": "error", "message": "Durum güncellenemedi."}), 500
 
 # ❌ DELETE - Yardım Çağrısı Sil
 @help_bp.route('/help-calls/<int:help_id>', methods=['DELETE'])
@@ -213,8 +288,6 @@ def delete_help_call(help_id):
     responses:
       200:
         description: Silme başarılı
-      404:
-        description: Kayıt bulunamadı
     """
     try:
         user_id = request.user_id
