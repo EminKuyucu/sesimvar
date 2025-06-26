@@ -17,7 +17,7 @@ type MarkerItem = {
   id: number | string;
   latitude: number;
   longitude: number;
-  type?: 'help' | 'safe' | 'area';
+  type?: 'help' | 'safe' | 'area' | 'address';
   created_at?: string;
   message?: string;
   user?: {
@@ -31,6 +31,7 @@ export default function MapScreen() {
 
   const [helpCalls, setHelpCalls] = useState<MarkerItem[]>([]);
   const [safeStatus, setSafeStatus] = useState<MarkerItem[]>([]);
+  const [userAddress, setUserAddress] = useState<MarkerItem | null>(null);
   const [userLocation, setUserLocation] = useState({ latitude: 37.0, longitude: 35.3 });
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'help' | 'safe' | 'area'>('all');
@@ -48,11 +49,14 @@ export default function MapScreen() {
         const token = await AsyncStorage.getItem('token');
         if (!token) return;
 
-        const [helpRes, safeRes] = await Promise.all([
+        const [helpRes, safeRes, addressRes] = await Promise.all([
           axios.get('http://192.168.31.73:5000/user/help-calls', {
             headers: { Authorization: `Bearer ${token}` },
           }),
           axios.get('http://192.168.31.73:5000/user/safe-status', {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get('http://192.168.31.73:5000/user/address', {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ]);
@@ -60,10 +64,20 @@ export default function MapScreen() {
         const helpData = helpRes.data.map((item: any) => ({ ...item, type: 'help' as const }));
         const safeData = safeRes.data.map((item: any) => ({ ...item, type: 'safe' as const }));
 
+        const addr = addressRes.data.data;
+        const addressMarker: MarkerItem = {
+          id: 'user-address',
+          latitude: addr.latitude,
+          longitude: addr.longitude,
+          type: 'address',
+          message: `${addr.neighborhood_name}, ${addr.street}`,
+        };
+
         setHelpCalls(helpData);
         setSafeStatus(safeData);
+        setUserAddress(addressMarker);
       } catch (err) {
-        console.error('Otomatik veri çekme hatası:', err);
+        console.error('Veri çekme hatası:', err);
       }
     };
 
@@ -82,15 +96,16 @@ export default function MapScreen() {
         };
 
         setUserLocation(coords);
-        await AsyncStorage.setItem('lastLocation', JSON.stringify(coords)); // ✅ Konumu sakla
+        await AsyncStorage.setItem('lastLocation', JSON.stringify(coords));
       } catch (err) {
+        console.error('Hata:', err); 
         console.warn('Canlı konum alınamadı, son konum gösterilecek.');
         const saved = await AsyncStorage.getItem('lastLocation');
         if (saved) {
           const coords = JSON.parse(saved);
-          setUserLocation(coords); // ✅ Kayıtlı konumu yükle
+          setUserLocation(coords);
         } else {
-          setUserLocation({ latitude: 37.0, longitude: 35.3 }); // fallback
+          setUserLocation({ latitude: 37.0, longitude: 35.3 });
         }
       } finally {
         await fetchData();
@@ -100,7 +115,6 @@ export default function MapScreen() {
     };
 
     initialize();
-
     return () => clearInterval(intervalId);
   }, []);
 
@@ -111,7 +125,6 @@ export default function MapScreen() {
   };
 
   const allMarkers = [...helpCalls, ...safeStatus, ...assemblyAreas];
-
   const filteredMarkers = allMarkers.filter((marker) =>
     selectedFilter === 'all' ? true : marker.type === selectedFilter
   );
@@ -122,6 +135,14 @@ export default function MapScreen() {
         <ActivityIndicator size="large" color={Colors.info} style={{ flex: 1 }} />
       ) : (
         <>
+          {userAddress && (
+            <View style={styles.addressBar}>
+              <Text style={styles.addressText}>
+                📍 Adresiniz: {userAddress.message}
+              </Text>
+            </View>
+          )}
+
           <MapView
             style={styles.map}
             initialRegion={{
@@ -137,6 +158,25 @@ export default function MapScreen() {
               title="Konumunuz"
               description="Şu anki konumunuz"
             />
+
+            {userAddress && (
+              <Marker
+                coordinate={{
+                  latitude: userAddress.latitude,
+                  longitude: userAddress.longitude,
+                }}
+                pinColor="blue"
+                title="Kayıtlı Adres"
+                description={userAddress.message}
+              >
+                <Callout>
+                  <View>
+                    <Text style={{ fontWeight: 'bold' }}>📍 Kayıtlı Adres</Text>
+                    <Text>{userAddress.message}</Text>
+                  </View>
+                </Callout>
+              </Marker>
+            )}
 
             {filteredMarkers.map((marker) => (
               <Marker
@@ -227,6 +267,22 @@ const styles = StyleSheet.create({
   filter: {
     fontSize: 14,
     fontWeight: 'bold',
+    color: Colors.text,
+  },
+  addressBar: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    right: 20,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 8,
+    elevation: 4,
+    zIndex: 10,
+  },
+  addressText: {
+    fontSize: 14,
+    fontWeight: '500',
     color: Colors.text,
   },
 });
