@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -13,56 +13,58 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { Colors } from '../theme/colors';
+import { Colors } from '../../../theme/colors';
 
-export default function LoginScreen() {
+export default function RegisterScreen() {
   const router = useRouter();
+  const [fullName, setFullName] = useState('');
   const [tcNo, setTcNo] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // ✅ Giriş yapılmışsa direkt ana sayfaya yönlendir
-  const checkToken = useCallback(async () => {
-    const token = await AsyncStorage.getItem('token');
-    if (token) router.replace('/(drawer)/home');
+  useEffect(() => {
+    const checkToken = async () => {
+      const token = await AsyncStorage.getItem('token');
+      if (token) {
+        router.replace('/(drawer)/home');
+      }
+    };
+    checkToken();
   }, [router]);
 
-  useEffect(() => {
-    checkToken();
-  }, [checkToken]);
-
-  const handleLogin = async () => {
-    if (!tcNo || !password) {
+  const handleRegister = async () => {
+    if (!fullName || !tcNo || !phone || !password) {
       return Alert.alert('Eksik Bilgi', 'Lütfen tüm alanları doldurun.');
     }
 
-    if (tcNo.length !== 11 || password.length < 4) {
-      return Alert.alert('Geçersiz Giriş', 'TC Kimlik No 11 haneli olmalı, şifre en az 4 karakter olmalı.');
+    if (tcNo.length !== 11) {
+      return Alert.alert('TC Kimlik No Hatası', 'TC Kimlik numarası 11 haneli olmalıdır.');
+    }
+
+    if (phone.length < 10) {
+      return Alert.alert('Telefon Hatası', 'Geçerli bir telefon numarası girin.');
+    }
+
+    if (password.length < 4) {
+      return Alert.alert('Şifre Hatası', 'Şifre en az 4 karakter olmalıdır.');
     }
 
     try {
       setLoading(true);
-
-      const res = await axios.post('http://192.168.31.73:5000/user/login', {
+      const res = await axios.post('http://10.196.232.32:5000/user/register', {
+        full_name: fullName,
         tc_no: tcNo,
-        password,
+        phone_number: phone,
+        password
       });
 
-      const token = res.data?.data?.token;
-      const fullName = res.data?.data?.full_name || 'Kullanıcı';
-
-      if (!token) {
-        return Alert.alert('Sunucu Hatası', 'Token alınamadı. Lütfen tekrar deneyin.');
-      }
-
-      await AsyncStorage.setItem('token', token);
-      await AsyncStorage.setItem('full_name', fullName);
-
-      Alert.alert('Giriş Başarılı', 'Hoş geldiniz!');
-      router.replace('/(drawer)/home');
+      const message = res.data?.message || 'Kayıt başarılı!';
+      Alert.alert('Başarılı', message);
+      router.replace('/login');
     } catch (err) {
-      console.error('Giriş hatası:', err?.response?.data || err);
-      Alert.alert('Hatalı Giriş', 'TC Kimlik No veya şifre yanlış.');
+      console.error('Kayıt hatası:', err?.response?.data || err);
+      Alert.alert('Hata', 'Kayıt başarısız. TC Kimlik No zaten kayıtlı olabilir.');
     } finally {
       setLoading(false);
     }
@@ -74,8 +76,15 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={styles.card}>
-        <Text style={styles.title}>Giriş Yap</Text>
+        <Text style={styles.title}>Kayıt Ol</Text>
 
+        <TextInput
+          placeholder="Ad Soyad"
+          value={fullName}
+          onChangeText={setFullName}
+          style={styles.input}
+          placeholderTextColor={Colors.gray}
+        />
         <TextInput
           placeholder="TC Kimlik No"
           value={tcNo}
@@ -85,7 +94,15 @@ export default function LoginScreen() {
           maxLength={11}
           placeholderTextColor={Colors.gray}
         />
-
+        <TextInput
+          placeholder="Telefon Numarası"
+          value={phone}
+          onChangeText={setPhone}
+          style={styles.input}
+          keyboardType="phone-pad"
+          maxLength={15}
+          placeholderTextColor={Colors.gray}
+        />
         <TextInput
           placeholder="Şifre"
           value={password}
@@ -97,18 +114,18 @@ export default function LoginScreen() {
 
         <TouchableOpacity
           style={[styles.button, loading && { opacity: 0.6 }]}
-          onPress={handleLogin}
+          onPress={handleRegister}
           disabled={loading}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Giriş Yap</Text>
+            <Text style={styles.buttonText}>Kayıt Ol</Text>
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => router.push('/register')}>
-          <Text style={styles.link}>Hesabın yok mu? Kayıt Ol</Text>
+        <TouchableOpacity onPress={() => router.replace('/login')}>
+          <Text style={styles.link}>Zaten hesabın var mı? Giriş Yap</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -150,7 +167,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fdfdfd',
   },
   button: {
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.safe,
     paddingVertical: 16,
     borderRadius: 10,
     alignItems: 'center',

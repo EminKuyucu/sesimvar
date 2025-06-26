@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import useAuthRedirect from '../../../hooks/useAuthRedirect';
-import { Colors } from '../../theme/colors';
+import { Colors } from '../../../theme/colors';
 
 export default function SafeScreen() {
   useAuthRedirect();
@@ -44,7 +44,7 @@ export default function SafeScreen() {
       const { latitude, longitude } = location.coords;
 
       const res = await axios.post(
-        'http://192.168.31.73:5000/user/safe-status',
+        'http://10.196.232.32:5000/user/safe-status',
         { latitude, longitude },
         {
           headers: {

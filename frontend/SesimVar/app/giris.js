@@ -1,22 +1,27 @@
-import { useEffect } from 'react';
-import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import { useEffect } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 
 export default function Index() {
   const router = useRouter();
 
   useEffect(() => {
-    const checkLogin = async () => {
+    const checkToken = async () => {
       const token = await AsyncStorage.getItem('token');
       if (token) {
-        router.replace('/(drawer)/home'); // Giriş yapılmışsa home ekranına gönder
+        router.replace('/(drawer)/home'); // 🔐 Giriş yapılmışsa
       } else {
-        router.replace('/login'); // Giriş yapılmamışsa login ekranına gönder
+        router.replace('/login'); // 🚪 Giriş yapılmamışsa
       }
     };
 
-    checkLogin();
+    checkToken();
   }, []);
 
-  return null;
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <ActivityIndicator size="large" />
+    </View>
+  );
 }

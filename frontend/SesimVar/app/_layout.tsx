@@ -1,22 +1,37 @@
-// import { useFonts } from 'expo-font';
-import { Slot } from 'expo-router';
-//import { Text, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Slot, useRouter, useSegments } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 
-export default function Layout() {
- /* const [fontsLoaded] = useFonts({
-    'Poppins-Regular': require('../assets/fonts/Poppins-Regular.ttf'),
-    'Poppins-Bold': require('../assets/fonts/Poppins-Bold.ttf'),
-  }); 
+export default function RootLayout() {
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const router = useRouter();
+  const segments = useSegments();
 
-  console.log('🟡 fontsLoaded:', fontsLoaded); // DEBUG SATIRI
+  useEffect(() => {
+    const checkLogin = async () => {
+      const token = await AsyncStorage.getItem('token');
+      const inAuthGroup = segments[0] === '(auth)';
 
-  if (!fontsLoaded) {
+      if (!token && !inAuthGroup) {
+        router.replace('/(auth)/login');
+      } else if (token && inAuthGroup) {
+        router.replace('/(drawer)/home');
+      }
+
+      setCheckingAuth(false);
+    };
+
+    checkLogin();
+  }, [segments]);
+
+  if (checkingAuth) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>Yükleniyor...</Text>
+        <ActivityIndicator size="large" />
       </View>
     );
-  } 
-*/
+  }
+
   return <Slot />;
 }

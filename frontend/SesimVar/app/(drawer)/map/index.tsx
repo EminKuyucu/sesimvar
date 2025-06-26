@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import MapView, { Callout, Circle, Marker } from 'react-native-maps';
 import useAuthRedirect from '../../../hooks/useAuthRedirect';
-import { Colors } from '../../theme/colors';
+import { Colors } from '../../../theme/colors';
 
 type MarkerItem = {
   id: number | string;
@@ -50,13 +50,13 @@ export default function MapScreen() {
         if (!token) return;
 
         const [helpRes, safeRes, addressRes] = await Promise.all([
-          axios.get('http://192.168.31.73:5000/user/help-calls', {
+          axios.get('http://10.196.232.32:5000/user/help-calls', {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          axios.get('http://192.168.31.73:5000/user/safe-status', {
+          axios.get('http://10.196.232.32:5000/user/safe-status', {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          axios.get('http://192.168.31.73:5000/user/address', {
+          axios.get('http://10.196.232.32:5000/user/address', {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ]);

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, TouchableOpacity } from 'react-native';
-import { Colors } from '../app/theme/colors';
+import { Colors } from '../theme/colors';
 
 
 export default function Card({ icon, text, color, onPress }) {

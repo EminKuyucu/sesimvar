@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import useAuthRedirect from '../../../hooks/useAuthRedirect';
-import { Colors } from '../../theme/colors';
+import { Colors } from '../../../theme/colors';
 
 export default function SettingsMenuScreen() {
   useAuthRedirect();

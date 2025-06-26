@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import useAuthRedirect from '../../../hooks/useAuthRedirect'; // 🔒 Koruma eklendi
-import { Colors } from '../../theme/colors';
+import { Colors } from '../../../theme/colors';
 
 export default function EmergencyInfoScreen() {
   useAuthRedirect(); // 🔒 Giriş kontrolü
@@ -29,7 +29,7 @@ export default function EmergencyInfoScreen() {
       setToken(storedToken);
 
       try {
-        const res = await axios.get('http://192.168.31.73:5000/user/profile', {
+        const res = await axios.get('http://10.196.232.32:5000/user/profile', {
           headers: { Authorization: `Bearer ${storedToken}` },
         });
 
@@ -53,7 +53,7 @@ export default function EmergencyInfoScreen() {
 
   const handleSave = async () => {
     try {
-      await axios.put('http://192.168.31.73:5000/user/profile', formData, {
+      await axios.put('http://10.196.232.32:5000/user/profile', formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
       Alert.alert('Başarılı', 'Afet bilgileri kaydedildi.');

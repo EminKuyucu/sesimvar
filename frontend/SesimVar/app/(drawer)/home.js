@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import useAuthRedirect from '../../hooks/useAuthRedirect'; // 🔐
-import { Colors } from '../theme/colors'; // ✅ düzeltildi
+import { Colors } from '../../theme/colors'; // ✅ düzeltildi
 
 export default function HomeScreen() {
   useAuthRedirect(); // 🔐 Token kontrolü
@@ -33,7 +33,7 @@ export default function HomeScreen() {
       const { latitude, longitude } = location.coords;
 
       await axios.post(
-        'http://192.168.31.73:5000/user/help-calls',
+        'http://10.196.232.32:5000/user/help-calls',
         {
           message: 'Yardım edin!',
           latitude,

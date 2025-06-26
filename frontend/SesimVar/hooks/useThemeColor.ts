@@ -1,4 +1,4 @@
-import { Colors } from '../app/theme/colors';
+import { Colors } from '../theme/colors';
 
 type ThemeColorName = keyof typeof Colors;
 

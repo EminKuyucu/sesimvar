@@ -30,11 +30,11 @@ export default function NeighborhoodDetailScreen() {
 
     const fetchData = async () => {
       try {
-        const res1 = await axios.get(`http://192.168.1.73:5000/neighborhoods/${id}`);
+        const res1 = await axios.get(`http://10.196.232.32:5000/neighborhoods/${id}`);
         setNeighborhood(res1.data.neighborhood);
         setEntries(res1.data.entries);
 
-        const res2 = await axios.get(`http://192.168.1.73:5000/neighborhoods/${id}/risk-score`);
+        const res2 = await axios.get(`http://10.196.232.32:5000/neighborhoods/${id}/risk-score`);
         setRiskScore(res2.data.score);
       } catch (error) {
         console.error('Detay alma hatası:', error);

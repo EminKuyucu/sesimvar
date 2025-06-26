@@ -89,8 +89,8 @@ export default function AddressScreen() {
       };
 
       const url = hasAddress
-        ? 'http://192.168.31.73:5000/user/address'
-        : 'http://192.168.31.73:5000/user/address';
+        ? 'http://10.196.232.32:5000/user/address'
+        : 'http://10.196.232.32:5000/user/address';
 
       const method = hasAddress ? 'put' : 'post';
 

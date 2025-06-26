@@ -56,10 +56,11 @@ export default function DrawerLayout() {
       >
         {/* 📄 Drawer ekranlarını burada tanımla */}
         <Drawer.Screen name="home" options={{ title: 'Ana Sayfa' }} />
-        <Drawer.Screen name="address" options={{ title: 'Adresim' }} />
-        <Drawer.Screen name="safe" options={{ title: 'Güvendeyim' }} />
-        <Drawer.Screen name="map" options={{ title: 'Harita' }} />
-        <Drawer.Screen name="settings" options={{ title: 'Ayarlar' }} />
+        <Drawer.Screen name="address/index" options={{ title: 'Adresim' }} />
+        <Drawer.Screen name="safe/index" options={{ title: 'Güvendeyim' }} />
+        <Drawer.Screen name="map/index" options={{ title: 'Harita' }} />
+        <Drawer.Screen name="settings/index" options={{ title: 'Ayarlar' }} />
+ 
       </Drawer>
     </GestureHandlerRootView>
   );

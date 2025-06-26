@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import useAuthRedirect from '../../../hooks/useAuthRedirect';
-import { Colors } from '../../theme/colors';
+import { Colors } from '../../../theme/colors';
 
 export default function ProfileScreen() {
   useAuthRedirect(); // 🔐 Token yoksa yönlendir
@@ -38,7 +38,7 @@ export default function ProfileScreen() {
 
       try {
         // 👤 Profil Bilgisi
-        const profileRes = await axios.get('http://192.168.31.73:5000/user/profile', {
+        const profileRes = await axios.get('http://10.196.232.32:5000/user/profile', {
           headers: { Authorization: `Bearer ${storedToken}` },
         });
 
@@ -50,7 +50,7 @@ export default function ProfileScreen() {
         });
 
         // 🏡 Adres Bilgisi
-        const addressRes = await axios.get('http://192.168.31.73:5000/user/address', {
+        const addressRes = await axios.get('http://10.196.232.32:5000/user/address', {
           headers: { Authorization: `Bearer ${storedToken}` },
         });
 
@@ -71,7 +71,7 @@ export default function ProfileScreen() {
 
     try {
       setLoading(true);
-      await axios.put('http://192.168.31.73:5000/user/profile', formData, {
+      await axios.put('http://10.196.232.32:5000/user/profile', formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

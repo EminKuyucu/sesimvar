@@ -21,7 +21,7 @@ export default function MapScreen() {
   useEffect(() => {
     const fetchNeighborhoods = async () => {
       try {
-        const res = await axios.get('http://192.168.1.73:5000/neighborhoods');
+        const res = await axios.get('http://10.196.232.32:5000/neighborhoods');
         setNeighborhoods(res.data);
       } catch (err) {
         console.error('Mahalle alma hatası:', err);

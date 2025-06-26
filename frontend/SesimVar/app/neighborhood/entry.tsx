@@ -2,12 +2,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { useState } from 'react';
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity
 } from 'react-native';
 
 const damageOptions = ['Yok', 'Hafif', 'Orta', 'Ağır'];
@@ -51,7 +51,7 @@ export default function NeighborhoodEntryScreen() {
       };
 
       const res = await axios.post(
-        'http://192.168.1.73:5000/user/neighborhood-entry',
+        'http://10.196.232.32:5000/user/neighborhood-entry',
         payload,
         {
           headers: {
