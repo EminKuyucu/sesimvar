@@ -3,128 +3,178 @@ import { Picker } from '@react-native-picker/picker';
 import axios from 'axios';
 import * as Location from 'expo-location';
 import { useEffect, useState } from 'react';
-import { Alert, Button, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Button,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
 type Neighborhood = {
   id: number;
   name: string;
   district: string;
   city: string;
-  latitude: number;
-  longitude: number;
 };
 
 export default function AddressScreen() {
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<number>(0);
+  const [street, setStreet] = useState('');
+  const [coords, setCoords] = useState({ latitude: 0, longitude: 0 });
   const [loading, setLoading] = useState(false);
+  const [hasAddress, setHasAddress] = useState(false); // 🟡 Adres var mı kontrolü
 
-  // 🟢 Mahalleleri Çek
   useEffect(() => {
-    axios
-      .get('http://192.168.31.73:5000/neighborhoods')
-      .then((res) => setNeighborhoods(res.data))
-      .catch((err) => {
-        console.error('Mahalleleri alma hatası:', err);
-        Alert.alert('Hata', 'Mahalleler yüklenemedi.');
-      });
+    const loadInitialData = async () => {
+      try {
+        // 🟢 Mahalle listesi
+        const res = await axios.get('http://192.168.31.73:5000/neighborhoods');
+        setNeighborhoods(res.data);
+
+        // 🟢 Mevcut adresi çek
+        const token = await AsyncStorage.getItem('token');
+        if (!token) return;
+
+        const addressRes = await axios.get('http://192.168.31.73:5000/user/address', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const data = addressRes.data.data;
+        setSelectedId(data.neighborhood_id);
+        setStreet(data.street);
+        setCoords({ latitude: data.latitude, longitude: data.longitude });
+        setHasAddress(true); // ✅ Adres varsa
+      } catch (err) {
+        // Eğer 404 dönüyorsa adres yok demektir → bu durumda sessiz geç
+        console.log('Adres bulunamadı veya hatalı:', err.response?.status);
+        setHasAddress(false);
+      }
+    };
+
+    loadInitialData();
   }, []);
 
-  // 🟢 Konum al ve adresi gönder
+  const handleGetLocation = async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Konum izni verilmedi.');
+      return;
+    }
+
+    const location = await Location.getCurrentPositionAsync({});
+    setCoords(location.coords);
+  };
+
   const handleSubmit = async () => {
-    if (!selectedId) {
-      Alert.alert('Uyarı', 'Lütfen bir mahalle seçin.');
+    if (!selectedId || !street.trim()) {
+      Alert.alert('Eksik Bilgi', 'Lütfen mahalle ve sokak bilgisini girin.');
       return;
     }
 
     setLoading(true);
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Hata', 'Konum izni verilmedi.');
-        return;
-      }
-
-      const location = await Location.getCurrentPositionAsync({});
-      const { latitude, longitude } = location.coords;
-
       const token = await AsyncStorage.getItem('token');
-      if (!token) {
-        Alert.alert('Hata', 'Giriş yapmadınız.');
-        return;
-      }
+      if (!token) return;
 
-      const body = {
+      const payload = {
         neighborhood_id: selectedId,
-        street: "1012. Sokak", // İstersen TextInput ekleyebilirsin
-        latitude,
-        longitude,
+        street: street.trim(),
+        latitude: coords.latitude,
+        longitude: coords.longitude,
       };
 
-      const res = await axios.post(
-        'http://192.168.31.73:5000/user/address',
-        body,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const url = hasAddress
+        ? 'http://192.168.31.73:5000/user/address'
+        : 'http://192.168.31.73:5000/user/address';
 
-      if (res.status === 200 || res.status === 201) {
-        Alert.alert('Başarılı', 'Adres kaydedildi.');
-      } else {
-        Alert.alert('Hata', 'Sunucu hatası.');
-      }
+      const method = hasAddress ? 'put' : 'post';
+
+      await axios[method](url, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      Alert.alert('Başarılı', hasAddress ? 'Adres güncellendi.' : 'Adres kaydedildi.');
+      setHasAddress(true); // Artık adres olduğu kesin
     } catch (error) {
       console.error('Adres gönderme hatası:', error);
-      Alert.alert('Hata', 'Adres gönderilirken sorun oluştu.');
+      Alert.alert('Hata', 'İşlem sırasında hata oluştu.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>Mahalleni Seç:</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>
+        {hasAddress ? '📍 Adresini Güncelle' : '📍 Adresini Kaydet'}
+      </Text>
+
+      <Text style={styles.label}>Mahalle:</Text>
       <Picker
         selectedValue={selectedId}
-        onValueChange={(itemValue) => setSelectedId(itemValue)}
+        onValueChange={(val) => setSelectedId(val)}
         style={styles.picker}
       >
-        <Picker.Item label="Mahalle seçin..." value={null} />
+        <Picker.Item label="Mahalle seçin..." value={0} />
         {neighborhoods.map((n) => (
-          <Picker.Item
-            key={n.id}
-            label={`${n.name} / ${n.district}`}
-            value={n.id}
-          />
+          <Picker.Item key={n.id} label={`${n.name} / ${n.district}`} value={n.id} />
         ))}
       </Picker>
 
-      <Button
-        title={loading ? 'Gönderiliyor...' : 'Adresi Kaydet'}
-        onPress={handleSubmit}
-        disabled={loading}
+      <Text style={styles.label}>Sokak:</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="1012. Sokak"
+        value={street}
+        onChangeText={setStreet}
       />
-    </View>
+
+      <Button title="Konumumu Al" onPress={handleGetLocation} />
+
+      <View style={{ marginTop: 16 }}>
+        {loading ? (
+          <ActivityIndicator size="large" color="#1976D2" />
+        ) : (
+          <Button
+            title={hasAddress ? 'Güncelle' : 'Kaydet'}
+            onPress={handleSubmit}
+            color="#1976D2"
+          />
+        )}
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    flex: 1,
+    padding: 24,
     backgroundColor: '#fff',
-    justifyContent: 'center',
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+    color: '#1976D2',
   },
   label: {
     fontSize: 16,
-    marginBottom: 10,
-    textAlign: 'center',
+    marginBottom: 6,
   },
   picker: {
-    marginBottom: 20,
+    marginBottom: 16,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
   },
 });

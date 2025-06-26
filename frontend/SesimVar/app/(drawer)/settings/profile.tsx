@@ -24,11 +24,12 @@ export default function ProfileScreen() {
     email: '',
   });
 
+  const [address, setAddress] = useState<any>(null); // 🏡 Adres bilgisi
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchData = async () => {
       const storedToken = await AsyncStorage.getItem('token');
       if (!storedToken) return;
 
@@ -36,25 +37,33 @@ export default function ProfileScreen() {
       setLoading(true);
 
       try {
-        const res = await axios.get('http://192.168.31.73:5000/user/profile', {
+        // 👤 Profil Bilgisi
+        const profileRes = await axios.get('http://192.168.31.73:5000/user/profile', {
           headers: { Authorization: `Bearer ${storedToken}` },
         });
 
         setFormData({
-          full_name: res.data.full_name || '',
-          tc_no: res.data.tc_no || '',
-          phone_number: res.data.phone_number || '',
-          email: res.data.email || '',
+          full_name: profileRes.data.full_name || '',
+          tc_no: profileRes.data.tc_no || '',
+          phone_number: profileRes.data.phone_number || '',
+          email: profileRes.data.email || '',
         });
+
+        // 🏡 Adres Bilgisi
+        const addressRes = await axios.get('http://192.168.31.73:5000/user/address', {
+          headers: { Authorization: `Bearer ${storedToken}` },
+        });
+
+        setAddress(addressRes.data.data);
       } catch (error) {
         console.error(error);
-        Alert.alert('Hata', 'Profil bilgileri alınamadı.');
+        Alert.alert('Hata', 'Bilgiler alınamadı.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProfile();
+    fetchData();
   }, []);
 
   const handleSave = async () => {
@@ -84,11 +93,7 @@ export default function ProfileScreen() {
         value={formData.full_name}
         onChangeText={(text) => setFormData({ ...formData, full_name: text })}
       />
-      <LabelledInput
-        label="TC Kimlik No"
-        value={formData.tc_no}
-        editable={false}
-      />
+      <LabelledInput label="TC Kimlik No" value={formData.tc_no} editable={false} />
       <LabelledInput
         label="Telefon"
         value={formData.phone_number}
@@ -101,6 +106,16 @@ export default function ProfileScreen() {
         onChangeText={(text) => setFormData({ ...formData, email: text })}
         keyboardType="email-address"
       />
+
+      {address && (
+        <View style={styles.addressCard}>
+          <Text style={styles.addressTitle}>🏡 Adres Bilgisi</Text>
+          <Text style={styles.addressText}>Şehir: {address.city}</Text>
+          <Text style={styles.addressText}>İlçe: {address.district}</Text>
+          <Text style={styles.addressText}>Mahalle: {address.neighborhood_name}</Text>
+          <Text style={styles.addressText}>Sokak: {address.street}</Text>
+        </View>
+      )}
 
       <TouchableOpacity
         style={[styles.button, loading && { opacity: 0.6 }]}
@@ -151,6 +166,22 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 10,
     fontSize: 16,
+  },
+  addressCard: {
+    backgroundColor: '#E3F2FD',
+    padding: 16,
+    borderRadius: 10,
+    marginTop: 20,
+  },
+  addressTitle: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginBottom: 8,
+    color: '#1976D2',
+  },
+  addressText: {
+    fontSize: 14,
+    marginBottom: 4,
   },
   button: {
     backgroundColor: Colors.primary,

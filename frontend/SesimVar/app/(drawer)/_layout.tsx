@@ -53,7 +53,14 @@ export default function DrawerLayout() {
           drawerActiveTintColor: '#1976D2',
           drawerLabelStyle: { fontSize: 16 },
         }}
-      />
+      >
+        {/* 📄 Drawer ekranlarını burada tanımla */}
+        <Drawer.Screen name="home" options={{ title: 'Ana Sayfa' }} />
+        <Drawer.Screen name="address" options={{ title: 'Adresim' }} />
+        <Drawer.Screen name="safe" options={{ title: 'Güvendeyim' }} />
+        <Drawer.Screen name="map" options={{ title: 'Harita' }} />
+        <Drawer.Screen name="settings" options={{ title: 'Ayarlar' }} />
+      </Drawer>
     </GestureHandlerRootView>
   );
 }
